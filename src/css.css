@@ -1,0 +1,193 @@
+/* iPad Pro 12.9" - 2 */
+
+position: relative;
+width: 1024px;
+height: 1366px;
+
+background: #D9D9D9;
+border-radius: 34px;
+/* Rectangle 17 */
+
+position: absolute;
+width: 914px;
+height: 1176px;
+left: 60px;
+top: 190px;
+
+background: #FFFFFF;
+border-radius: 20px;
+
+
+/* Rectangle 13 */
+
+position: absolute;
+width: 1024px;
+height: 205px;
+left: 0px;
+top: -15px;
+
+background: #5B6770;
+border-radius: 4px;
+
+
+/* Rectangle 15 */
+
+position: absolute;
+width: 1024px;
+height: 113px;
+left: 0px;
+top: 40px;
+
+background: #474E58;
+
+
+/* BENVENUTO */
+
+position: absolute;
+width: 605px;
+height: 111px;
+left: calc(50% - 605px/2 + 45.5px);
+top: 32px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 92px;
+line-height: 111px;
+
+color: #FFFFFF;
+
+
+
+/* Rectangle 16 */
+
+position: absolute;
+width: 600px;
+height: 120px;
+left: 373px;
+top: 453px;
+
+background: #888E93;
+
+
+/* Line 4 */
+
+position: absolute;
+width: 1176px;
+height: 0px;
+left: 63px;
+top: 1366px;
+
+border: 5px solid #000000;
+transform: rotate(-90.15deg);
+
+
+/* Line 5 */
+
+position: absolute;
+width: 1176px;
+height: 0px;
+left: 974px;
+top: 1366px;
+
+border: 5px solid #000000;
+transform: rotate(-90deg);
+
+
+/* Rectangle 20 */
+
+position: absolute;
+width: 807px;
+height: 130px;
+left: 121px;
+top: 243px;
+
+background: #D9D9D9;
+border-radius: 200px;
+
+
+/* CIAO COME POSSO AIUTARTI? */
+
+position: absolute;
+width: 751px;
+height: 94px;
+left: 164px;
+top: 279px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 50px;
+line-height: 61px;
+
+color: #000000;
+
+
+
+/* Rectangle 21 */
+
+position: absolute;
+width: 1024px;
+height: 256px;
+left: 5px;
+top: 1129px;
+
+background: #5B6770;
+border-radius: 4px;
+
+
+/* Rectangle 5 */
+
+position: absolute;
+width: 561px;
+height: 30px;
+left: calc(50% - 561px/2 - 0.5px);
+top: 1336px;
+
+background: #D9D9D9;
+border-radius: 78px;
+
+
+/* Ellipse 2 */
+
+position: absolute;
+width: 291px;
+height: 150px;
+left: calc(50% - 291px/2 + 6.5px);
+top: 1153px;
+
+background: #474E58;
+
+
+/* Materiali_ONO_Lean_logistics_V1-01 1 */
+
+position: absolute;
+width: 160px;
+height: 122.11px;
+left: calc(50% - 160px/2 + 12px);
+top: 1167px;
+
+background: url(Materiali_ONO_Lean_logistics_V1-01);
+border-radius: 60px;
+
+
+/* Rectangle 22 */
+
+position: absolute;
+width: 600px;
+height: 120px;
+left: 373px;
+top: 895px;
+
+background: #888E93;
+
+
+/* Rectangle 16 */
+
+position: absolute;
+width: 600px;
+height: 120px;
+left: 60px;
+top: 653px;
+
+background: #888E93;
