@@ -11,7 +11,7 @@
 
   <h1 v-if="!loggedIn">Login</h1>
   <form v-if="!loggedIn" @submit.prevent="login">
-    <input v-model="form.email" type="text" placeholder="Email" />
+    <input v-model="form.username" type="text" placeholder="Username" />
     <input v-model="form.password" type="password" placeholder="Password" />
     <button type="submit">Accedi</button>
   </form>
@@ -91,7 +91,7 @@ import sendImg from "./assets/send.png";
 import micImg from "./assets/mic.png";
 
 const form = reactive({
-  email: "",
+  username: "",
   password: "",
 });
 
@@ -108,23 +108,34 @@ const fileInput = ref(null);
 const imageInput = ref(null);
 const chatId = ref(1); // deve essere un numero, non stringa
 
-function resetForm() {
-  form.email = "";
-  form.password = "";
-}
-
-function login() {
-  if (!form.email || !form.password) {
+async function login() {
+  if (!form.username || !form.password) {
     errore.value = "Compila tutti i campi!";
     return;
   }
-
-  if (form.email === "giulio" && form.password === "ciao") {
-    errore.value = "";
-    loggedIn.value = true;
-    resetForm();
-  } else {
-    errore.value = "Credenziali errate!";
+  try {
+    const response = await fetch("http://localhost:8000/user/login/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: form.username,
+        password: form.password
+      })
+    });
+    if (!response.ok) {
+      errore.value = "Errore di rete o server.";
+      return;
+    }
+    const data = await response.json();
+    if (data.isValid) {
+      errore.value = "";
+      loggedIn.value = true;
+      resetForm();
+    } else {
+      errore.value = "Credenziali errate!";
+    }
+  } catch (e) {
+    errore.value = "Errore di rete.";
   }
 }
 
