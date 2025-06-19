@@ -34,7 +34,7 @@
     </div>
     <div class="logo-ono-bg"></div>
     <div class="chat-footer">
-      <form @submit.prevent="sendMessage" class="chat-form">
+      <form @submit.prevent="() => sendMessage(chatId)" class="chat-form">
         <!-- Bottone allega e menu -->
         <button type="button" class="allega-btn" title="Allega" @click="toggleAllegaMenu">
           <img :src="allegaImg" alt="Allega" style="width: 28px; height: 28px" />
@@ -106,6 +106,7 @@ const messagesContainer = ref(null); // aggiungi questo ref
 const chatInput = ref("");
 const fileInput = ref(null);
 const imageInput = ref(null);
+const chatId = ref(1); // deve essere un numero, non stringa
 
 function resetForm() {
   form.email = "";
@@ -127,7 +128,60 @@ function login() {
   }
 }
 
-async function sendMessage() {
+async function askBackend(prompt, chat_id, onToken) {
+  // Debug: stampa il payload prima di inviare
+  const payload = {
+    role: "user",
+    content: prompt,
+    chat_id: Number(chat_id)
+  };
+  console.log("Payload inviato a /message/reply/:", payload);
+
+  const response = await fetch("http://localhost:8000/message/reply/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error("Errore HTTP:", response.status, text);
+    throw new Error("Errore HTTP " + response.status + ": " + text);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let fullText = "";
+  let buffer = "";
+  let done = false;
+
+  do {
+    const { value, done: streamDone } = await reader.read();
+    done = streamDone;
+    if (done && !value) break;
+    const chunk = decoder.decode(value || new Uint8Array(), { stream: true });
+    buffer += chunk;
+    let lines = buffer.split("\n");
+    buffer = lines.pop(); // l'ultima riga potrebbe essere incompleta
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const data = JSON.parse(line);
+        if (data.message && data.message.content) {
+          fullText += data.message.content;
+          if (typeof onToken === "function") {
+            onToken(fullText);
+          }
+        }
+      } catch (e) {
+        console.error("Errore parsing JSON line:", line, e);
+      }
+    }
+  } while (!done);
+
+  return fullText;
+}
+async function sendMessage(chat_id) {
   if (isLoading.value) return;
   if (!chatInput.value.trim()) return;
   const userMsg = chatInput.value;
@@ -136,10 +190,10 @@ async function sendMessage() {
   isLoading.value = true;
   messages.value.push({ sender: "bot", text: "" });
 
-  await askLlama(userMsg, async (partial) => {
+  // Corretto: passa chat_id come secondo parametro, callback come terzo
+  await askBackend(userMsg, chat_id, (partial) => {
     messages.value[messages.value.length - 1].text = partial;
-    messages.value = [...messages.value]; // forza la reattività
-    await nextTick();
+    messages.value = [...messages.value]; 
   });
 
   isLoading.value = false;
@@ -236,41 +290,6 @@ watch(
     }
   }
 );
-
-async function askLlama(prompt, onToken) {
-  const response = await fetch("http://192.168.1.72:8080/api/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "llama3.2:3b",
-      prompt: prompt,
-      stream: true,
-    }),
-  });
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let fullText = "";
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    const chunk = decoder.decode(value, { stream: true });
-    for (const line of chunk.split("\n")) {
-      if (!line.trim()) continue;
-      try {
-        const data = JSON.parse(line);
-        if (data.response) {
-          fullText += data.response;
-          if (onToken) onToken(fullText); // aggiorna la risposta parziale
-        }
-      } catch (e) {
-        // ignora righe non JSON
-      }
-    }
-  }
-  return fullText;
-}
 </script>
 
 <style scoped>
