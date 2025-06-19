@@ -3,7 +3,7 @@
   <div v-if="drawerOpen" class="drawer-overlay" @click.self="drawerOpen = false">
     <div class="drawer">
       <div class="drawer-header">
-         <br><div style="font-weight:bold; font-size:1.4em; margin-bottom: 8px;">Le tue chat</div>
+         <br><div style="font-weight:bold; font-size:1.4em; margin-bottom: 8px; color: #ffff">Le tue chat</div>
         <div style="height:1px; background:#333; margin-bottom:10px; width:100%;"></div>
         <ul v-if="userChats.length" style="margin-top:0; padding-left:12px;">
           <li
@@ -443,7 +443,7 @@ watch(
   width: 600px;
   height: 800px; /* aumenta la percentuale per occupare più spazio nella container */
   margin: 48px auto 0 auto;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(43, 43, 43, 0.85);
   border-radius: 22px;
   box-sizing: border-box;
   display: flex;
@@ -468,7 +468,7 @@ watch(
   border-radius: 8px 8px 0 0;
   border-style: solid;
   border-width: 2px 2px 2px 2px;
-  border-color: #fff; /* <-- bordo superiore bianco visibile */
+  border-color:  #5b6770;
   display: flex;
   align-items: center;
   justify-content: flex-start; /* allinea tutto a sinistra */
@@ -495,7 +495,7 @@ watch(
 
 .user {
   align-self: flex-end;
-  background: linear-gradient(135deg, #8ca6db 60%, #5b6770 100%);
+  background: linear-gradient(135deg, #63759a 60%,  #5b6770 100%);
   color: #fff;
   border-radius: 20px 20px 4px 20px;
   padding: 14px 24px;
@@ -512,7 +512,7 @@ watch(
 
 .bot {
   align-self: flex-start;
-  background: #f2f6fc;
+  background: #b9b9b9;
   color: #2f3336;
   border-radius: 20px 20px 20px 4px;
   padding: 14px 24px;
@@ -558,9 +558,9 @@ watch(
   padding: 0 0px;
   align-items: center;
   width: 95%;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(98, 97, 97, 0.85);
   box-shadow: 0 2px 12px rgba(44, 62, 80, 0.08);
-  border: 1px solid #ffffff;
+  border: 0px solid #ffffff;
   margin-bottom: 0;
 }
 
@@ -573,17 +573,17 @@ watch(
   border: none;
   padding: 10px 18px; /* meno padding verticale */
   font-size: 18px;
-  background: #ffffff;
+  background: rgba(98, 97, 97, 0.85);
   margin-bottom: 0;
   outline: none;
   transition: box-shadow 0.2s, border 0.2s;
   box-shadow: 0 1px 4px rgba(44, 62, 80, 0.06);
+  border-color: rgba(98, 97, 97, 0.85);
+  color: #fff;
+  
 }
 
-.chat-form input:focus {
-  box-shadow: 0 1px 5px #ffffff;
-  border: 1px solid #ffffff;
-}
+
 
 .errore {
   color: #ff4d4f;
@@ -618,7 +618,7 @@ watch(
   height: 180px;
   transform: translateX(-50%);
   background: url("/Materiali_ONO_Lean_logistics_V1-01.png") no-repeat center/contain;
-  opacity: 0.13;
+  opacity: 0.25;
   z-index: 0;
   pointer-events: none;
   margin: 0;
@@ -694,12 +694,14 @@ watch(
   color: #5b6770;
   border-bottom: 1px solid #e0e0e0;
   letter-spacing: 2px;
+  background-color:  rgba(98, 97, 97, 0.85);
 }
 
 .drawer-header ul {
   list-style: none;
   padding-left: 0;
   margin: 0;
+  color: #fff;
 }
 
 @keyframes slideInDrawer {
@@ -715,7 +717,7 @@ watch(
   background: none;
   border: none;
   font-size: 1.5em;
-  color: #5b6770;
+  color: #ffffff;
   cursor: pointer;
   margin-right: 8px;
   padding: 0 8px 0 10px;
@@ -728,7 +730,7 @@ watch(
 }
 
 .send-btn {
-  background: #ffffff;
+  background: #ffffff00;
   color: #fff;
   border: none;
   border-radius: 50%;
@@ -743,14 +745,14 @@ watch(
   transition: background 0.2s;
 }
 .send-btn:hover {
-  background: #ffffff;
+  background: #ffffff00;
 }
 
 .voice-btn {
   position: absolute;
   bottom: 13px;
   right: 65px;
-  background: #ffffff;
+  background: #ffffff00;
   color: #ffffff;
   border: none;
   border-radius: 20%;
@@ -764,7 +766,7 @@ watch(
   transition: background 0.2s;
 }
 .voice-btn:hover {
-  background: #ffffff;
+  background: #ffffff00;
 }
 
 .voice-btn.recording {
