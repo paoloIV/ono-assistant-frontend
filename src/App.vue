@@ -3,7 +3,20 @@
   <div v-if="drawerOpen" class="drawer-overlay" @click.self="drawerOpen = false">
     <div class="drawer">
       <div class="drawer-header">
-        chat
+         <br><div style="font-weight:bold; font-size:1.4em; margin-bottom: 8px;">Le tue chat</div>
+        <div style="height:1px; background:#333; margin-bottom:10px; width:100%;"></div>
+        <ul v-if="userChats.length" style="margin-top:0; padding-left:12px;">
+          <li
+            v-for="chat in userChats"
+            :key="chat.id"
+            @click="selectChat(chat.id)"
+            :class="{ 'selected-chat': chat.id === chatId }"
+            style="cursor:pointer;"
+          >
+            {{ chat.name }}
+          </li>
+        </ul>
+        <button class="add-chat-btn" @click="addNewChat" style="margin-top:10px;width:100%">+ Nuova chat</button>
         <button class="drawer-close" @click="drawerOpen = false">×</button>
       </div>
     </div>
@@ -107,8 +120,11 @@ const chatInput = ref("");
 const fileInput = ref(null);
 const imageInput = ref(null);
 const chatId = ref(1); // deve essere un numero, non stringa
+const userId = ref(null);
+const userChats = ref([]);
 
 async function login() {
+  console.log("Login chiamato");
   if (!form.username || !form.password) {
     errore.value = "Compila tutti i campi!";
     return;
@@ -129,6 +145,10 @@ async function login() {
     const data = await response.json();
     if (data.isValid) {
       errore.value = "";
+      userId.value = data.user_id;
+      // RIMOSSA la creazione chat qui!
+      await fetchUserChats();
+      // Solo ora imposta loggedIn e resetta il form
       loggedIn.value = true;
       resetForm();
     } else {
@@ -136,6 +156,20 @@ async function login() {
     }
   } catch (e) {
     errore.value = "Errore di rete.";
+    console.error(e);
+  }
+}
+
+async function fetchUserChats() {
+  if (!userId.value) return;
+  try {
+    const res = await fetch(`http://localhost:8000/user/chats?user_id=${userId.value}`);
+    if (res.ok) {
+      const data = await res.json();
+      userChats.value = data.chats || [];
+    }
+  } catch (e) {
+    console.error("Errore nel recupero delle chat utente:", e);
   }
 }
 
@@ -195,14 +229,58 @@ async function askBackend(prompt, chat_id, onToken) {
 async function sendMessage(chat_id) {
   if (isLoading.value) return;
   if (!chatInput.value.trim()) return;
+
+  // Crea una nuova chat solo se chatId non corrisponde a una chat esistente
+  const chatEsistente = userChats.value.some(c => c.id === chatId.value);
+  let firstMsg = chatInput.value.trim();
+  if (!chatEsistente) {
+    const now = Math.floor(Date.now() / 1000);
+    // Titolo: primi 30 caratteri del primo messaggio
+    const chatTitle = firstMsg.length > 30 ? firstMsg.slice(0, 10) + '…' : firstMsg;
+    const chatPayload = {
+      user_id: userId.value,
+      name: chatTitle || `Chat di ${form.username}`,
+      at: now,
+      messages: []
+    };
+    try {
+      const chatRes = await fetch("http://localhost:8000/chat/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(chatPayload)
+      });
+      if (chatRes.ok) {
+        const chatData = await chatRes.json();
+        if (chatData.chat_id) {
+          chatId.value = chatData.chat_id;
+          await fetchUserChats();
+          // Aggiorna il titolo dopo la creazione
+          await fetch(`http://localhost:8000/chat/update_chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: chatId.value, name: chatTitle })
+          });
+        }
+      } else {
+        const errorText = await chatRes.text();
+        console.error("Errore nella creazione chat:", errorText);
+        isLoading.value = false;
+        return;
+      }
+    } catch (e) {
+      console.error("Errore di rete nella creazione chat:", e);
+      isLoading.value = false;
+      return;
+    }
+  }
+
   const userMsg = chatInput.value;
   messages.value.push({ sender: "user", text: userMsg });
   chatInput.value = "";
   isLoading.value = true;
   messages.value.push({ sender: "bot", text: "" });
 
-  // Corretto: passa chat_id come secondo parametro, callback come terzo
-  await askBackend(userMsg, chat_id, (partial) => {
+  await askBackend(userMsg, chatId.value, (partial) => {
     messages.value[messages.value.length - 1].text = partial;
     messages.value = [...messages.value]; 
   });
@@ -286,6 +364,59 @@ function handleImage(event) {
     // Qui puoi gestire l'immagine selezionata
     console.log("Immagine selezionata:", file);
   }
+}
+
+async function loadChatMessages(chat_id) {
+  try {
+    const res = await fetch(`http://localhost:8000/chat/${chat_id}/messages`);
+    if (res.ok) {
+      const data = await res.json();
+      messages.value = (data.messages || []).map(msg => ({
+        sender: msg.role === 'user' ? 'user' : 'bot',
+        text: msg.content
+      }));
+    }
+  } catch (e) {
+    console.error("Errore nel caricamento messaggi chat:", e);
+  }
+}
+
+// Sostituisci il click handler nel drawer:
+// <li v-for="chat in userChats" :key="chat.id" @click="selectChat(chat.id)" ...>
+function selectChat(id) {
+  chatId.value = id;
+  drawerOpen.value = false;
+  loadChatMessages(id);
+}
+
+function addNewChat() {
+  if (!userId.value) return;
+  let titolo = prompt("Titolo della nuova chat:");
+  if (!titolo) return;
+  titolo = titolo.trim();
+  if (!titolo) return;
+  const now = Math.floor(Date.now() / 1000);
+  const chatPayload = {
+    user_id: userId.value,
+    name: titolo.length > 30 ? titolo.slice(0, 30) + '…' : titolo,
+    at: now,
+    messages: []
+  };
+  fetch("http://localhost:8000/chat/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(chatPayload)
+  })
+    .then(res => res.json())
+    .then(async data => {
+      if (data.chat_id) {
+        chatId.value = data.chat_id;
+        await fetchUserChats();
+        messages.value = [];
+        drawerOpen.value = false;
+      }
+    })
+    .catch(e => console.error("Errore creazione nuova chat:", e));
 }
 
 // Scroll automatico ogni volta che cambia messages
@@ -565,6 +696,12 @@ watch(
   letter-spacing: 2px;
 }
 
+.drawer-header ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
 @keyframes slideInDrawer {
   from {
     transform: translateX(-100%);
@@ -708,5 +845,24 @@ watch(
 .bot.loading {
   opacity: 0.7;
   font-style: italic;
+}
+
+.selected-chat {
+  background: var(--accent);
+  color: #5b6770;
+  border-radius: 8px;
+  z-index: 200;
+  background-color: #8ca6db !important;
+}
+.add-chat-btn {
+  background: #5b6770;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.2s;
+  font-weight: bold;
 }
 </style>
