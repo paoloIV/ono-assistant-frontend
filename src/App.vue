@@ -1,17 +1,18 @@
 <template>
+  <div class="appFull">
   <!-- Drawer laterale -->
   <div v-if="drawerOpen" class="drawer-overlay" @click.self="drawerOpen = false">
     <div class="drawer">
-      <div class="drawer-header">
-         <br><div style="font-weight:bold; font-size:1.4em; margin-bottom: 8px; color: #ffff">Le tue chat</div>
-        <div style="height:1px; background:#333; margin-bottom:10px; width:100%;"></div>
-        <ul v-if="userChats.length" style="margin-top:0; padding-left:12px;">
+      <div class="drawer-header" style="overflow-x: hidden;">
+         <br><div class="drawer-h2" >Le tue chat</div>
+        <div style="height:1px; background:#333; margin-bottom:0px; width:100%;"></div>
+        <ul v-if="userChats.length" style="margin-top:0; padding-left:12px; overflow-x: hidden;">
           <li
             v-for="chat in userChats"
             :key="chat.id"
             @click="selectChat(chat.id)"
             :class="{ 'selected-chat': chat.id === chatId }"
-            style="cursor:pointer;"
+            style="cursor:pointer; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis;"
           >
             {{ chat.name }}
           </li>
@@ -22,8 +23,8 @@
     </div>
   </div>
 
-  <h1 v-if="!loggedIn">Login</h1>
-  <form v-if="!loggedIn" @submit.prevent="login">
+  <h1 v-if="!loggedIn" class="login-title">Login</h1>
+  <form v-if="!loggedIn" @submit.prevent="login" class="login-form">
     <input v-model="form.username" type="text" placeholder="Username" />
     <input v-model="form.password" type="password" placeholder="Password" />
     <button type="submit">Accedi</button>
@@ -33,7 +34,10 @@
   <div v-if="loggedIn" class="chat">
     <h2>
       <button v-if="!drawerOpen" class="drawer-btn" @click="drawerOpen = true">☰</button>
-      ASSISTENTE ONO
+      Assistente ONO
+      <button class="darkmode-btn" @click="toggleDarkMode" title="Dark mode">
+        <img src="/darkmode.png" alt="Dark mode" style="width:40px;height:40px;" />
+      </button>
     </h2>
     <div class="chat-messages" ref="messagesContainer">
       <div v-for="(msg, i) in messages" :key="i" :class="msg.sender">
@@ -43,50 +47,46 @@
         </span>
         {{ msg.text }}
       </div>
-      <div v-if="isLoading" class="bot loading"></div>
     </div>
     <div class="logo-ono-bg"></div>
     <div class="chat-footer">
-      <form @submit.prevent="() => sendMessage(chatId)" class="chat-form">
-        <!-- Bottone allega e menu -->
-        <button type="button" class="allega-btn" title="Allega" @click="toggleAllegaMenu">
-          <img :src="allegaImg" alt="Allega" style="width: 28px; height: 28px" />
-        </button>
-        <div v-if="showAllegaMenu" class="allega-menu-overlay" @click="closeAllegaMenu">
-          <div class="allega-menu" @click.stop>
-            <button type="button" @click="openFileDialog">File</button>
-            <button type="button" @click="openImageDialog">Immagini</button>
+        <form @submit.prevent="() => sendMessage(chatId)" class="chat-form">
+          <!-- Bottone allega e menu -->
+          <button type="button" class="allega-btn" title="Allega" @click="toggleAllegaMenu">
+            <img :src="allegaIcon" alt="Allega" style="width: 28px; height: 28px" />
+          </button>
+          <div v-if="showAllegaMenu" class="allega-menu-overlay" @click="closeAllegaMenu">
+            <div class="allega-menu" @click.stop>
+              <button type="button" @click="openFileDialog">File</button>
+              <button type="button" @click="openImageDialog">Immagini</button>
+            </div>
           </div>
-        </div>
-        <input
-          v-model="chatInput"
-          type="text"
-          placeholder="Scrivi un messaggio..."
-          autocomplete="off"
-          :disabled="isLoading"
-        />
-        <button
-          type="button"
-          class="voice-btn"
-          :class="{ recording: isRecording }"
-          title="Messaggio vocale"
-          @click="startVoiceMessage"
-          :disabled="isLoading"
-        >
-          <img :src="micImg" alt="Microfono" style="width: 28px; height: 28px" />
-        </button>
-        <button type="submit" class="send-btn" title="Invia" :disabled="isLoading">
-          <img :src="sendImg" alt="Invia" style="width: 28px; height: 28px" />
-        </button>
-      </form>
-    </div>
+          <input
+            v-model="chatInput"
+            type="text"
+            placeholder="Scrivi un messaggio..."
+            autocomplete="off"
+            :disabled="isLoading"
+            color = "#fff6fc"
+          />
+          <button
+            type="button"
+            class="voice-btn"
+            :class="{ recording: isRecording }"
+            title="Messaggio vocale"
+            @click="startVoiceMessage"
+            :disabled="isLoading"
+          >
+            <img :src="micIcon" alt="Microfono" style="width: 28px; height: 28px" />
+          </button>
+          <button type="submit" class="send-btn" title="Invia" :disabled="isLoading">
+            <img :src="sendIcon" alt="Invia" style="width: 28px; height: 28px" />
+          </button>
+        </form>
+      </div>
   </div>
 
-  <!-- Ellipse 2 -->
-  <div class="ellipse-2">
-    <div class="logo-ono"></div>
-  </div>
-
+ 
   <input ref="fileInput" type="file" style="display: none" @change="handleFile" />
   <input
     ref="imageInput"
@@ -95,13 +95,17 @@
     style="display: none"
     @change="handleImage"
   />
+</div>
 </template>
 
 <script setup>
-import { reactive, ref, watch, nextTick } from "vue";
+import { reactive, ref, watch, nextTick, onMounted, computed } from "vue";
 import allegaImg from "./assets/allega.png";
+import allegaWhiteImg from "./assets/allega.white.png";
 import sendImg from "./assets/send.png";
+import sendWhiteImg from "./assets/send.white.png";
 import micImg from "./assets/mic.png";
+import micWhiteImg from "./assets/mic.white.png";
 
 const form = reactive({
   username: "",
@@ -123,6 +127,20 @@ const chatId = ref(1); // deve essere un numero, non stringa
 const userId = ref(null);
 const userChats = ref([]);
 
+const isDark = ref(false);
+function toggleDarkMode() {
+  isDark.value = !isDark.value;
+  if (isDark.value) {
+    document.body.classList.add('darkmode');
+  } else {
+    document.body.classList.remove('darkmode');
+  }
+}
+
+const allegaIcon = computed(() => isDark.value ? allegaImg : allegaWhiteImg);
+const micIcon = computed(() => isDark.value ? micImg : micWhiteImg);
+const sendIcon = computed(() => isDark.value ? sendImg : sendWhiteImg);
+
 async function login() {
   console.log("Login chiamato");
   if (!form.username || !form.password) {
@@ -130,7 +148,7 @@ async function login() {
     return;
   }
   try {
-    const response = await fetch("http://localhost:8000/user/login/", {
+    const response = await fetch("http://192.168.1.42:8000/user/login/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -163,7 +181,7 @@ async function login() {
 async function fetchUserChats() {
   if (!userId.value) return;
   try {
-    const res = await fetch(`http://localhost:8000/user/chats?user_id=${userId.value}`);
+    const res = await fetch(`http://192.168.1.42:8000/user/chats?user_id=${userId.value}`);
     if (res.ok) {
       const data = await res.json();
       userChats.value = data.chats || [];
@@ -182,7 +200,7 @@ async function askBackend(prompt, chat_id, onToken) {
   };
   console.log("Payload inviato a /message/reply/:", payload);
 
-  const response = await fetch("http://localhost:8000/message/reply/", {
+  const response = await fetch("http://192.168.1.42:8000/message/reply/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
@@ -235,8 +253,7 @@ async function sendMessage(chat_id) {
   let firstMsg = chatInput.value.trim();
   if (!chatEsistente) {
     const now = Math.floor(Date.now() / 1000);
-    // Titolo: primi 30 caratteri del primo messaggio
-    const chatTitle = firstMsg.length > 30 ? firstMsg.slice(0, 10) + '…' : firstMsg;
+    const chatTitle = firstMsg.length > 10 ? firstMsg.slice(0, 10) + '…' : firstMsg;
     const chatPayload = {
       user_id: userId.value,
       name: chatTitle || `Chat di ${form.username}`,
@@ -244,7 +261,7 @@ async function sendMessage(chat_id) {
       messages: []
     };
     try {
-      const chatRes = await fetch("http://localhost:8000/chat/create", {
+      const chatRes = await fetch("http://192.168.1.42:8000/chat/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(chatPayload)
@@ -255,7 +272,7 @@ async function sendMessage(chat_id) {
           chatId.value = chatData.chat_id;
           await fetchUserChats();
           // Aggiorna il titolo dopo la creazione
-          await fetch(`http://localhost:8000/chat/update_chat`, {
+          await fetch(`http://192.168.1.42:8000/chat/update_chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ chat_id: chatId.value, name: chatTitle })
@@ -368,7 +385,7 @@ function handleImage(event) {
 
 async function loadChatMessages(chat_id) {
   try {
-    const res = await fetch(`http://localhost:8000/chat/${chat_id}/messages`);
+    const res = await fetch(`http://192.168.1.42:8000/chat/${chat_id}/messages`);
     if (res.ok) {
       const data = await res.json();
       messages.value = (data.messages || []).map(msg => ({
@@ -402,7 +419,7 @@ function addNewChat() {
     at: now,
     messages: []
   };
-  fetch("http://localhost:8000/chat/create", {
+  fetch("http://192.168.1.42:8000/chat/create", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(chatPayload)
@@ -432,19 +449,60 @@ watch(
     }
   }
 );
+
+onMounted(() => {
+  // Scrolla sempre in fondo quando l'input riceve focus
+  const input = document.querySelector('.chat-form input');
+  if (input) {
+    input.addEventListener('focus', () => {
+      setTimeout(() => {
+        const messages = document.querySelector('.chat-messages');
+        if (messages) {
+          messages.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
+        }
+      }, 350);
+    });
+  }
+});
 </script>
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css?family=Inter:400,700&display=swap");
 
+html, body, #app {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden !important;
+  box-sizing: border-box;
+  touch-action: none; /* Previene scroll con el dedo */
+}
+
+.appFull {
+  position: fixed;
+  top: 0;
+  left: 0;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: "Inter", sans-serif;
+  z-index: 1;
+  background: transparent;
+  touch-action: none; /* Previene scroll táctil */
+}
 /* Chat box principale */
 .chat {
   position: relative;
-  width: 600px;
-  height: 800px; /* aumenta la percentuale per occupare più spazio nella container */
-  margin: 48px auto 0 auto;
-  background: rgba(43, 43, 43, 0.85);
-  border-radius: 22px;
+  width: 100%;
+  height: 100%; /* aumenta la percentuale per occupare più spazio nella container */
+  background: rgba(66, 64, 64, 0.85);
+  /*border-radius: 22px;*/
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -457,18 +515,14 @@ watch(
 /* Header chat */
 .chat h2 {
   position: relative;
-  width: 99, 5%;
-  height: 70px;
+  width: 100%;
+  height:100px;
   background: #5b6770;
   color: #fff;
   font-size: 2.3em;
   font-family: "Nokia Expanded", sans-serif;
   font-weight: 700;
   margin: 0;
-  border-radius: 8px 8px 0 0;
-  border-style: solid;
-  border-width: 2px 2px 2px 2px;
-  border-color:  #5b6770;
   display: flex;
   align-items: center;
   justify-content: flex-start; /* allinea tutto a sinistra */
@@ -478,6 +532,24 @@ watch(
   text-shadow: 0 2px 8px rgba(44, 62, 80, 0.1);
   gap: 12px;
 }
+
+
+.darkmode-btn {
+  position: absolute;
+  right: 40px;
+  top: 30px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
 
 /* Messaggi */
 .chat-messages {
@@ -491,33 +563,33 @@ watch(
   flex-direction: column;
   gap: 14px;
   scroll-behavior: smooth;
+  width: 100%;
 }
 
 .user {
   align-self: flex-end;
-  background: linear-gradient(135deg, #63759a 60%,  #5b6770 100%);
+  background: linear-gradient(135deg, #8ca6db 60%, #5b6770 100%);
   color: #fff;
   border-radius: 20px 20px 4px 20px;
   padding: 14px 24px;
   margin: 2px 0;
-  font-size: 18px;
+  font-size: 35px;
   display: inline-block;
   max-width: 70%;
   word-break: break-word;
   text-align: right;
-  box-shadow: 0 2px 12px rgba(44, 62, 80, 0.1);
-  animation: fadeInUp 0.3s;
-  z-index: 1; /* Assicurati che i messaggi dell'utente siano sopra */
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+  margin-right: 40px;
 }
 
 .bot {
   align-self: flex-start;
-  background: #b9b9b9;
+  background: #babdc4;
   color: #2f3336;
   border-radius: 20px 20px 20px 4px;
   padding: 14px 24px;
   margin: 2px 0;
-  font-size: 18px;
+  font-size: 35px;
   display: inline-block;
   max-width: 70%;
   word-break: break-word;
@@ -543,8 +615,8 @@ watch(
   width: 100%;
   background: transparent;
   border-radius: 0 0 0 0;
-  padding: 5px 0 5px 0;
-  margin-bottom: 5px; /* <--- aggiungi o aumenta questo valore */
+  padding: 5px 0 px 0;
+  margin-bottom: 0px; /* <--- aggiungi o aumenta questo valore */
   display: flex;
   justify-content: center;
   z-index: 2;
@@ -557,10 +629,10 @@ watch(
   border-radius: 40px;
   padding: 0 0px;
   align-items: center;
-  width: 95%;
-  background: rgba(98, 97, 97, 0.85);
+  width: 96%;
+  height: 100px;
+  background: rgba(107, 107, 107, 0.85);
   box-shadow: 0 2px 12px rgba(44, 62, 80, 0.08);
-  border: 0px solid #ffffff;
   margin-bottom: 0;
 }
 
@@ -571,19 +643,25 @@ watch(
   flex: 1;
   border-radius: 40px;
   border: none;
-  padding: 10px 18px; /* meno padding verticale */
+  padding: 10px 18px; 
   font-size: 18px;
-  background: rgba(98, 97, 97, 0.85);
+  background: rgba(107, 107, 107, 0);
   margin-bottom: 0;
   outline: none;
   transition: box-shadow 0.2s, border 0.2s;
   box-shadow: 0 1px 4px rgba(44, 62, 80, 0.06);
-  border-color: rgba(98, 97, 97, 0.85);
-  color: #fff;
-  
+  margin-left: 35px;
+  color: #f2f6fc;
+  width: 100%;
+
 }
 
-
+/* Placeholder più chiaro per l'input chat */
+.chat-form input::placeholder {
+  color: #a1a1a1;
+  font-size: 1.1em;
+  font-weight: 500;
+}
 
 .errore {
   color: #ff4d4f;
@@ -594,15 +672,13 @@ watch(
   letter-spacing: 1px;
 }
 
-/* Ellipse 2 */
-.ellipse-2 {
-  display: none;
-}
-
 /* Materiali_ONO_Lean_logistics_V1-01 1 */
 .logo-ono {
   width: 60px;
   height: 50px;
+  position: relative;
+  left: 50%;
+  bottom: 50%; 
   background: url("/Materiali_ONO_Lean_logistics_V1-01.png") no-repeat center/contain;
   border-radius: 20px;
   z-index: 3;
@@ -613,18 +689,17 @@ watch(
 .logo-ono-bg {
   position: absolute;
   left: 50%;
-  bottom: 250px; /* più vicino al fondo */
-  width: 220px;
-  height: 180px;
+  bottom: 1200px; /* più vicino al fondo */
+  width: 250px;
+  height: 200px;
   transform: translateX(-50%);
   background: url("/Materiali_ONO_Lean_logistics_V1-01.png") no-repeat center/contain;
-  opacity: 0.25;
+  opacity: 0.3;
   z-index: 0;
   pointer-events: none;
   margin: 0;
 }
 
-/* Stili per il drawer */
 .drawer-btn {
   position: static;
   margin-right: 12px; /* meno spazio tra bottone e testo */
@@ -641,10 +716,6 @@ watch(
   align-items: center;
   justify-content: center;
 }
-
-/*.drawer-btn:hover {
-  background: #8ca6db;
-}*/
 
 .drawer-close {
   position: absolute;
@@ -678,7 +749,7 @@ watch(
   width: 50vw;
   max-width: 400px;
   height: 100vh;
-  background: #fff;
+  background: rgba(98, 97, 97, 0.85);
   box-shadow: 2px 0 16px rgba(44, 62, 80, 0.18);
   z-index: 100;
   display: flex;
@@ -692,16 +763,24 @@ watch(
   font-weight: bold;
   padding: 32px 24px 16px 24px;
   color: #5b6770;
-  border-bottom: 1px solid #e0e0e0;
   letter-spacing: 2px;
-  background-color:  rgba(98, 97, 97, 0.85);
+  background-color:  rgba(98, 97, 97, 0);
+  /* Rendi la sezione header flessibile verticalmente */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
+/* Rendi la lista delle chat scrollabile se supera l'altezza */
 .drawer-header ul {
   list-style: none;
   padding-left: 0;
   margin: 0;
   color: #fff;
+  max-height: 45vh;
+  overflow-y: auto;
+  /* Aggiungi un po' di padding a destra per la scrollbar */
+  padding-right: 8px;
 }
 
 @keyframes slideInDrawer {
@@ -714,60 +793,56 @@ watch(
 }
 
 .allega-btn {
-  background: none;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #ffffff00;
   border: none;
   font-size: 1.5em;
-  color: #ffffff;
   cursor: pointer;
-  margin-right: 8px;
+  margin-left: 20px;
   padding: 0 8px 0 10px;
   display: flex;
   align-items: center;
   transition: color 0.2s;
+  width: 60px;
+  height: 60px;
+  
 }
-.allega-btn:hover {
-  color: #8ca6db;
-}
+
 
 .send-btn {
-  background: #ffffff00;
-  color: #fff;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #ffffff00;
   border: none;
-  border-radius: 50%;
-  width: 0px;
-  height: 38px;
-  font-size: 1.3em;
+  font-size: 1.5em;
+  cursor: pointer;
+  margin-right: 20px;
+  padding: 0 8px 0 10px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-left: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.send-btn:hover {
-  background: #ffffff00;
+  transition: color 0.2s;
+  width: 60px;
+  height: 60px;
 }
 
+
 .voice-btn {
-  position: absolute;
-  bottom: 13px;
-  right: 65px;
-  background: #ffffff00;
-  color: #ffffff;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #ffffff00;
   border: none;
-  border-radius: 20%;
-  width: 18px;
-  height: 38px;
-  font-size: 1.3em;
+  font-size: 1.5em;
+  cursor: pointer;
+  margin-right: 20px;
+  padding: 0 8px 0 10px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.2s;
+  transition: color 0.2s;
+  width: 60px;
+  height: 60px;
 }
-.voice-btn:hover {
-  background: #ffffff00;
-}
+
 
 .voice-btn.recording {
   background: #419ffc;
@@ -778,18 +853,15 @@ watch(
   position: absolute;
   bottom: 60px;
   left: 24px;
-  background: #fff;
-  border-radius: 12px;
   box-shadow: 0 4px 16px rgba(44, 62, 80, 0.13);
   padding: 12px 0;
   display: flex;
   flex-direction: column;
   min-width: 120px;
   z-index: 200;
-  border: 1px solid #e0e0e0;
+  color: #f2f6fc;
 }
 .allega-menu button {
-  background: none;
   border: none;
   color: #5b6770;
   font-size: 1em;
@@ -797,9 +869,7 @@ watch(
   text-align: left;
   cursor: pointer;
   transition: background 0.2s;
-}
-.allega-menu button:hover {
-  background: #f2f6fc;
+  background-color: transparent;
 }
 
 /* Nuovi stili per il menu Allega (overlay) */
@@ -823,6 +893,7 @@ watch(
 }
 .allega-menu-close:hover {
   color: #8ca6db;
+  background-color: transparent;
 }
 
 .spinner {
@@ -866,5 +937,203 @@ watch(
   font-size: 1em;
   transition: background 0.2s;
   font-weight: bold;
+}
+.drawer-h2{
+  font-weight: bold;
+  font-size: 1.4em;
+  margin-bottom: 8px;
+  color: #ffffff;
+  width: 100%;
+}
+
+/* Login styles */
+.login-title {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #5b6770;
+  text-align: center;
+  margin-top: 60px;
+  margin-bottom: 24px;
+  letter-spacing: 2px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-width: 400px;
+  margin: 0 auto 32px auto;
+  padding: 32px 24px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(44, 62, 80, 0.12);
+}
+
+.login-form input {
+  font-size: 1.3rem;
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: 1px solid #babdc4;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 8px;
+}
+
+.login-form button[type="submit"] {
+  font-size: 1.2rem;
+  padding: 12px 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #8ca6db 60%, #5b6770 100%);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.login-form button[type="submit"]:hover {
+  background: linear-gradient(135deg, #5b6770 60%, #8ca6db 100%);
+}
+
+/* Dark mode styles */
+
+body.darkmode .chat {
+  background: rgba(255, 255, 255, 0.85) !important;
+}
+body.darkmode .chat h2 {
+  color: #fff !important;
+  background: #5b6770 !important;
+}
+body.darkmode .user {
+  color: #fff !important;
+  background: linear-gradient(135deg, #8ca6db 60%, #5b6770 100%) !important;
+}
+body.darkmode .bot {
+  color: #2f3336 !important;
+  background: #f2f6fc !important;
+}
+body.darkmode .errore {
+  color: #ff4d4f !important;
+}
+body.darkmode .drawer-header {
+  color: #5b6770 !important;
+}
+body.darkmode .allega-menu button {
+  color: #5b6770 !important;
+}
+body.darkmode .chat-footer {
+  background: transparent !important;
+}
+body.darkmode .chat-form {
+  background: rgba(255, 255, 255, 0.85) !important;
+}
+
+body.darkmode .drawer-btn {
+  background: #5b6770 !important;
+}
+body.darkmode .drawer-close,
+body.darkmode .allega-btn,
+body.darkmode .send-btn,
+body.darkmode .voice-btn {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.darkmode .voice-btn.recording {
+  background: #419ffc !important;
+}
+body.darkmode .drawer-overlay {
+  background: rgba(44, 62, 80, 0.18) !important;
+}
+body.darkmode .drawer {
+  background: #fff !important;
+}
+body.darkmode .allega-menu {
+  background: #fff !important;
+}
+
+
+body.darkmode .spinner {
+  border: 3px solid #8ca6db !important;
+  border-top: 3px solid #fff !important;
+  
+}
+body.darkmode .drawer-header ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  color: #5b6770 !important;
+}
+body.darkmode .drawer-header li {
+  color: #5b6770 !important;
+
+}
+body.darkmode .drawer-h2{
+  color :  #5b6770 !important;
+
+}
+body.darkmode .logo-ono-bg {
+  opacity: 0.15 !important;
+}
+
+body,
+body.darkmode,
+.chat,
+.chat.darkmode,
+.chat h2,
+.user,
+.bot,
+.drawer-header,
+.allega-menu,
+.drawer,
+.chat-form,
+.chat-form input,
+.drawer-btn,
+.drawer-close,
+.allega-btn,
+.send-btn,
+.voice-btn,
+.selected-chat {
+  transition: background 0.4s, color 0.4s, border 0.4s, box-shadow 0.4s;
+}
+
+@media (max-width: 600px) {
+  .chat {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .chat-messages {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding-bottom: 16px;
+    min-height: 0;
+    max-height: none;
+    box-sizing: border-box;
+  }
+  .chat-footer {
+    /* Nessun fixed/sticky! */
+    width: 100vw;
+    background: rgba(107, 107, 107, 0.85);
+    z-index: 1001;
+    margin-bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .chat-form {
+    width: 100vw;
+    height: 70px;
+    border-radius: 0;
+    margin-bottom: 0;
+    box-shadow: 0 -2px 12px rgba(44, 62, 80, 0.08);
+    background: rgba(107, 107, 107, 0.85);
+    z-index: 1002;
+  }
+}
+
+button:focus, .add-chat-btn:focus, .drawer-close:focus, .drawer-btn:focus, .darkmode-btn:focus, .allega-btn:focus, .voice-btn:focus, .send-btn:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 </style>
