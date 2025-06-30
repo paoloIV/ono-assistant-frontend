@@ -82,6 +82,9 @@
           <button type="submit" class="send-btn" title="Invia" :disabled="isLoading">
             <img :src="sendIcon" alt="Invia" style="width: 28px; height: 28px" />
           </button>
+          <button v-if="isLoading" type="button" class="stop-btn" @click="stopGeneration" :title="'Interrompi generazione'">
+            <img :src="stopIcon" alt="Stop" style="width: 28px; height: 28px" />
+          </button>
         </form>
       </div>
   </div>
@@ -106,6 +109,8 @@ import sendImg from "./assets/send.png";
 import sendWhiteImg from "./assets/send.white.png";
 import micImg from "./assets/mic.png";
 import micWhiteImg from "./assets/mic.white.png";
+import stopImg from "./assets/stop.png";
+import stopWhiteImg from "./assets/stop.white.png";
 
 const form = reactive({
   username: "",
@@ -140,6 +145,15 @@ function toggleDarkMode() {
 const allegaIcon = computed(() => isDark.value ? allegaImg : allegaWhiteImg);
 const micIcon = computed(() => isDark.value ? micImg : micWhiteImg);
 const sendIcon = computed(() => isDark.value ? sendImg : sendWhiteImg);
+const stopIcon = computed(() => isDark.value ? stopImg : stopWhiteImg);
+window.stopRequested = false;
+
+function stopGeneration() {
+  window.stopRequested = true;
+  isLoading.value = false;
+}
+
+const stopRequested = ref(false);
 
 async function login() {
   console.log("Login chiamato");
@@ -217,8 +231,13 @@ async function askBackend(prompt, chat_id, onToken) {
   let fullText = "";
   let buffer = "";
   let done = false;
+  window.stopRequested = false;
 
   do {
+    if (window.stopRequested) {
+      isLoading.value = false;
+      break;
+    }
     const { value, done: streamDone } = await reader.read();
     done = streamDone;
     if (done && !value) break;
@@ -241,6 +260,7 @@ async function askBackend(prompt, chat_id, onToken) {
       }
     }
   } while (!done);
+  window.stopRequested = false;
 
   return fullText;
 }
@@ -275,7 +295,7 @@ async function sendMessage(chat_id) {
           await fetch(`http://192.168.1.42:8000/chat/update_chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ chat_id: chatId.value, name: chatTitle })
+            body: JSON.stringify({ id: chatId.value , name: chatTitle })
           });
         }
       } else {
@@ -385,7 +405,7 @@ function handleImage(event) {
 
 async function loadChatMessages(chat_id) {
   try {
-    const res = await fetch(`http://192.168.1.42:8000/chat/${chat_id}/messages`);
+    const res = await fetch(`http://192.168.1.62:8000/chat/${chat_id}/messages`);
     if (res.ok) {
       const data = await res.json();
       messages.value = (data.messages || []).map(msg => ({
@@ -419,7 +439,7 @@ function addNewChat() {
     at: now,
     messages: []
   };
-  fetch("http://192.168.1.42:8000/chat/create", {
+  fetch("http://192.168.1.62:8000/chat/create", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(chatPayload)
@@ -846,6 +866,19 @@ html, body, #app {
 
 .voice-btn.recording {
   background: #419ffc;
+}
+
+.stop-btn {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none;
+  padding: 0 8px 0 10px;
+  margin: 0;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Stili per il menu Allega */

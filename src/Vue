@@ -1,0 +1,11 @@
+let app = new Vue({
+    el: '#app',
+    data: {
+    term: localStorage.getItem("searchTerm")
+    },
+    methods: {
+     showYourIP()
+    {
+        this.term = 
+    }
+}});
