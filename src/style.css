@@ -22,17 +22,6 @@ a:hover {
   color: #535bf2;
 }
 
-body, #app {
-  margin: 0;
-  padding: 0;
-  display: flex;
-  place-items: center;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
@@ -88,4 +77,322 @@ button:focus-visible {
 }
 h1{
   font-size: larger;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded';
+  src: url('./assets/NokiaExpanded.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Nokia Expanded';
+  src: url('NokiaExpandedItalic-Bold.eot');
+  src: local('Nokia Expanded Italic Bold'), local('NokiaExpandedItalic-Bold'),
+    url('NokiaExpandedItalic-Bold.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedItalic-Bold.woff2') format('woff2'),
+    url('NokiaExpandedItalic-Bold.woff') format('woff'),
+    url('NokiaExpandedItalic-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded';
+  src: url('NokiaExpanded-ExtraBold.eot');
+  src: local('Nokia Expanded Extra Bold'), local('NokiaExpanded-ExtraBold'),
+    url('NokiaExpanded-ExtraBold.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpanded-ExtraBold.woff2') format('woff2'),
+    url('NokiaExpanded-ExtraBold.woff') format('woff'),
+    url('NokiaExpanded-ExtraBold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded';
+  src: url('NokiaExpanded-Black.eot');
+  src: local('Nokia Expanded Black'), local('NokiaExpanded-Black'),
+    url('NokiaExpanded-Black.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpanded-Black.woff2') format('woff2'),
+    url('NokiaExpanded-Black.woff') format('woff'),
+    url('NokiaExpanded-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded';
+  src: url('NokiaExpandedItalic-Black.eot');
+  src: local('Nokia Expanded Italic Black'), local('NokiaExpandedItalic-Black'),
+    url('NokiaExpandedItalic-Black.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedItalic-Black.woff2') format('woff2'),
+    url('NokiaExpandedItalic-Black.woff') format('woff'),
+    url('NokiaExpandedItalic-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded';
+  src: url('NokiaExpandedItalic-Medium.eot');
+  src: local('Nokia Expanded Italic Medium'), local('NokiaExpandedItalic-Medium'),
+    url('NokiaExpandedItalic-Medium.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedItalic-Medium.woff2') format('woff2'),
+    url('NokiaExpandedItalic-Medium.woff') format('woff'),
+    url('NokiaExpandedItalic-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded';
+  src: url('NokiaExpanded-Bold.eot');
+  src: local('Nokia Expanded Bold'), local('NokiaExpanded-Bold'),
+    url('NokiaExpanded-Bold.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpanded-Bold.woff2') format('woff2'),
+    url('NokiaExpanded-Bold.woff') format('woff'),
+    url('NokiaExpanded-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded';
+  src: url('NokiaExpandedItalic-ExtraBold.eot');
+  src: local('Nokia Expanded Italic ExtBd'), local('NokiaExpandedItalic-ExtraBold'),
+    url('NokiaExpandedItalic-ExtraBold.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedItalic-ExtraBold.woff2') format('woff2'),
+    url('NokiaExpandedItalic-ExtraBold.woff') format('woff'),
+    url('NokiaExpandedItalic-ExtraBold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded';
+  src: url('NokiaExpandedItalic-SemiBold.eot');
+  src: local('Nokia Expanded Italic Semi Bold'), local('NokiaExpandedItalic-SemiBold'),
+    url('NokiaExpandedItalic-SemiBold.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedItalic-SemiBold.woff2') format('woff2'),
+    url('NokiaExpandedItalic-SemiBold.woff') format('woff'),
+    url('NokiaExpandedItalic-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded Outline';
+  src: url('NokiaExpandedOutline-SemiBold.eot');
+  src: local('Nokia Expanded Outline SemBd'), local('NokiaExpandedOutline-SemiBold'),
+    url('NokiaExpandedOutline-SemiBold.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedOutline-SemiBold.woff2') format('woff2'),
+    url('NokiaExpandedOutline-SemiBold.woff') format('woff'),
+    url('NokiaExpandedOutline-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded Outline';
+  src: url('NokiaExpandedOutline-Regular.eot');
+  src: local('Nokia Expanded Outline Regular'), local('NokiaExpandedOutline-Regular'),
+    url('NokiaExpandedOutline-Regular.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedOutline-Regular.woff2') format('woff2'),
+    url('NokiaExpandedOutline-Regular.woff') format('woff'),
+    url('NokiaExpandedOutline-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded';
+  src: url('NokiaExpandedItalic-Regular.eot');
+  src: local('Nokia Expanded Italic Regular'), local('NokiaExpandedItalic-Regular'),
+    url('NokiaExpandedItalic-Regular.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedItalic-Regular.woff2') format('woff2'),
+    url('NokiaExpandedItalic-Regular.woff') format('woff'),
+    url('NokiaExpandedItalic-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded Outline';
+  src: url('NokiaExpandedOutline-Medium.eot');
+  src: local('Nokia Expanded Outline Medium'), local('NokiaExpandedOutline-Medium'),
+    url('NokiaExpandedOutline-Medium.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedOutline-Medium.woff2') format('woff2'),
+    url('NokiaExpandedOutline-Medium.woff') format('woff'),
+    url('NokiaExpandedOutline-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded';
+  src: url('NokiaExpanded-Medium.eot');
+  src: local('Nokia Expanded Medium'), local('NokiaExpanded-Medium'),
+    url('NokiaExpanded-Medium.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpanded-Medium.woff2') format('woff2'),
+    url('NokiaExpanded-Medium.woff') format('woff'),
+    url('NokiaExpanded-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded Outline';
+  src: url('NokiaExpandedOutlineItalic-Bd.eot');
+  src: local('Nokia Expanded Outline Italic B'), local('NokiaExpandedOutlineItalic-Bd'),
+    url('NokiaExpandedOutlineItalic-Bd.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedOutlineItalic-Bd.woff2') format('woff2'),
+    url('NokiaExpandedOutlineItalic-Bd.woff') format('woff'),
+    url('NokiaExpandedOutlineItalic-Bd.ttf') format('truetype');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded Outline';
+  src: url('NokiaExpandedOutline-Bold.eot');
+  src: local('Nokia Expanded Outline Bold'), local('NokiaExpandedOutline-Bold'),
+    url('NokiaExpandedOutline-Bold.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedOutline-Bold.woff2') format('woff2'),
+    url('NokiaExpandedOutline-Bold.woff') format('woff'),
+    url('NokiaExpandedOutline-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded Outline';
+  src: url('NokiaExpandedOutlineItalic-Rg.eot');
+  src: local('Nokia Expanded Outline Italic R'), local('NokiaExpandedOutlineItalic-Rg'),
+    url('NokiaExpandedOutlineItalic-Rg.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedOutlineItalic-Rg.woff2') format('woff2'),
+    url('NokiaExpandedOutlineItalic-Rg.woff') format('woff'),
+    url('NokiaExpandedOutlineItalic-Rg.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded Outline';
+  src: url('NokiaExpandedOutlineItalic-Ex.eot');
+  src: local('Nokia Expanded Outline Italic E'), local('NokiaExpandedOutlineItalic-Ex'),
+    url('NokiaExpandedOutlineItalic-Ex.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedOutlineItalic-Ex.woff2') format('woff2'),
+    url('NokiaExpandedOutlineItalic-Ex.woff') format('woff'),
+    url('NokiaExpandedOutlineItalic-Ex.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded';
+  src: url('NokiaExpanded-SemiBold.eot');
+  src: local('Nokia Expanded Semi Bold'), local('NokiaExpanded-SemiBold'),
+    url('NokiaExpanded-SemiBold.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpanded-SemiBold.woff2') format('woff2'),
+    url('NokiaExpanded-SemiBold.woff') format('woff'),
+    url('NokiaExpanded-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded Outline';
+  src: url('NokiaExpandedOutline-ExtBd.eot');
+  src: local('Nokia Expanded Outline ExtBd'), local('NokiaExpandedOutline-ExtBd'),
+    url('NokiaExpandedOutline-ExtBd.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedOutline-ExtBd.woff2') format('woff2'),
+    url('NokiaExpandedOutline-ExtBd.woff') format('woff'),
+    url('NokiaExpandedOutline-ExtBd.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded Outline';
+  src: url('NokiaExpandedOutlineItalic-Md.eot');
+  src: local('Nokia Expanded Outline Italic M'), local('NokiaExpandedOutlineItalic-Md'),
+    url('NokiaExpandedOutlineItalic-Md.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedOutlineItalic-Md.woff2') format('woff2'),
+    url('NokiaExpandedOutlineItalic-Md.woff') format('woff'),
+    url('NokiaExpandedOutlineItalic-Md.ttf') format('truetype');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded';
+  src: url('NokiaExpanded-Regular.eot');
+  src: local('Nokia Expanded Regular'), local('NokiaExpanded-Regular'),
+    url('NokiaExpanded-Regular.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpanded-Regular.woff2') format('woff2'),
+    url('NokiaExpanded-Regular.woff') format('woff'),
+    url('NokiaExpanded-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded Outline';
+  src: url('NokiaExpandedOutline-Black.eot');
+  src: local('Nokia Expanded Outline Black'), local('NokiaExpandedOutline-Black'),
+    url('NokiaExpandedOutline-Black.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedOutline-Black.woff2') format('woff2'),
+    url('NokiaExpandedOutline-Black.woff') format('woff'),
+    url('NokiaExpandedOutline-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded Outline';
+  src: url('NokiaExpandedOutlineItalic-Bl.eot');
+  src: local('Nokia Expanded Outline Italic B'), local('NokiaExpandedOutlineItalic-Bl'),
+    url('NokiaExpandedOutlineItalic-Bl.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedOutlineItalic-Bl.woff2') format('woff2'),
+    url('NokiaExpandedOutlineItalic-Bl.woff') format('woff'),
+    url('NokiaExpandedOutlineItalic-Bl.ttf') format('truetype');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nokia Expanded Outline';
+  src: url('NokiaExpandedOutlineItalic-Sm.eot');
+  src: local('Nokia Expanded Outline Italic S'), local('NokiaExpandedOutlineItalic-Sm'),
+    url('NokiaExpandedOutlineItalic-Sm.eot?#iefix') format('embedded-opentype'),
+    url('NokiaExpandedOutlineItalic-Sm.woff2') format('woff2'),
+    url('NokiaExpandedOutlineItalic-Sm.woff') format('woff'),
+    url('NokiaExpandedOutlineItalic-Sm.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
 }

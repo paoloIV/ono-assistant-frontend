@@ -1,6 +1,5 @@
 <template>
-  <div class="appFull">
-  <!-- Drawer laterale -->
+  <div class="appFull">    
   <div v-if="drawerOpen" class="drawer-overlay" @click.self="drawerOpen = false">
     <div class="drawer">
       <div class="drawer-header" style="overflow-x: hidden;">
@@ -11,82 +10,235 @@
             v-for="chat in userChats"
             :key="chat.id"
             @click="selectChat(chat.id)"
-            :class="{ 'selected-chat': chat.id === chatId }"
-            style="cursor:pointer; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis;"
+            :class="{ 'selected-chat': chat.selected }"
+            style="cursor:pointer; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis; display: flex; align-items: center; position: relative; min-height: 40px;"
           >
-            {{ chat.name }}
+            <span v-if="Number(chat.id) === Number(chatId.value)" style="margin-right: 8px; font-size: 1.5em; color: #ff4d4f; z-index: 10; pointer-events: none;">▶️</span>
+            <template v-if="chat.editingName">
+              <input v-model="chat.newName" style="flex:1; min-width:0; max-width:140px; font-size:1em; border-radius:6px; border:1px solid #babdc4; padding:2px 8px; margin-right:4px;" @click.stop />
+              <button @click.stop="confirmRenameChat(chat)" title="Conferma" style="background:#8ca6db; color:#fff; border:none; border-radius:4px; margin-left:2px; cursor:pointer; padding:2px 8px;">✔</button>
+              <button @click.stop="cancelRenameChat(chat)" title="Annulla" style="background:#babdc4; color:#333; border:none; border-radius:4px; margin-left:2px; cursor:pointer; padding:2px 8px;">✕</button>
+            </template>
+            <template v-else>
+              <span style="flex:1; overflow-x: hidden; text-overflow: ellipsis;">{{ chat.name }}</span>
+              <button type="button" @click.stop="startRenameChat(chat)" title="Rinomina chat" style="background:transparent; border:none; margin-left:4px; cursor:pointer; padding:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center;">
+                <img :src="editIcon" alt="Rinomina" style="width:24px; height:24px;" />
+              </button>
+              <button type="button" @click.stop="deleteChat(chat.id)" title="Elimina chat" style="background:transparent; border:none; margin-left:4px; cursor:pointer; padding:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center;">
+                <img :src="deleteIcon" alt="Elimina" style="width:28px; height:28px;" />
+              </button>
+            </template>
           </li>
         </ul>
+
         <button class="add-chat-btn" @click="addNewChat" style="margin-top:10px;width:100%">+ Nuova chat</button>
         <button class="drawer-close" @click="drawerOpen = false">×</button>
       </div>
     </div>
   </div>
 
-  <h1 v-if="!loggedIn" class="login-title">Login</h1>
-  <form v-if="!loggedIn" @submit.prevent="login" class="login-form">
+
+  <h1 v-if="!loggedIn" class="login-title">ono assistant</h1>
+  <div v-if="!loggedIn" class="login-logo-wrapper">
+    <div class="logo-ono login-logo"></div>
+  </div>
+
+
+  <form v-if="!loggedIn && !showResetPassword && !showRegister" @submit.prevent="login" class="login-form">
     <input v-model="form.username" type="text" placeholder="Username" />
     <input v-model="form.password" type="password" placeholder="Password" />
-    <button type="submit">Accedi</button>
+    <button class ="login-btn"type="submit">ACCEDI</button>
+    <!-- <button type="button" class="forgot-password-btn" @click="showResetPassword = true" style="background:none;border:none;color:#5b6770;text-decoration:underline;font-size:1em;margin-top:8px;cursor:pointer;">hai dimenticato la password?</button> -->
+    <button type="button" class="register-btn" @click="showRegister = true" style="background:none;border:none;color:#5b6770;text-decoration:underline;font-size:1em;margin-top:8px;cursor:pointer; ">CREA UN ACCOUNT</button>
   </form>
+
+  <div v-if="showRegister && !loggedIn" class="register-page">
+    <div class="reset-password-page-center">
+      <div class="reset-password-inner">
+        <h1 class="reset-title">Crea un account</h1>
+        <form @submit.prevent="handleRegister" class="reset-form">
+          <input v-model="registerUsername" type="text" placeholder="Username" class="login-form-input" />
+          <input v-model="registerPassword" type="password" placeholder="Password" class="login-form-input" />
+          <button type="submit">Registrati</button>
+        </form>
+        <p v-if="registerFeedback" :class="{'success': registerFeedbackType==='success', 'error': registerFeedbackType==='error', 'info': registerFeedbackType==='info'}">{{ registerFeedback }}</p>
+        <button class="back-to-login" @click="showRegister = false">Torna al login</button>
+      </div>
+    </div>
+  </div>
+  <div v-if="showResetPassword && !loggedIn" class="reset-password-page">
+    <div class="reset-password-page-center">
+      <div class="reset-password-inner">
+        <h1 class="reset-title">reset password</h1>
+        <form @submit.prevent="handleReset" class="reset-form">
+          <input v-model="resetUsername" type="text" placeholder="Username" class="login-form-input" />
+          <input v-model="resetNewPassword" type="password" placeholder="Nuova password" class="login-form-input" />
+          <button type="submit">Resetta password</button>
+        </form>
+        <p v-if="resetFeedback" :class="{'success': resetFeedbackType==='success', 'error': resetFeedbackType==='error', 'info': resetFeedbackType==='info'}">{{ resetFeedback }}</p>
+        <button class="back-to-login" @click="showResetPassword = false">Torna al login</button>
+      </div>
+    </div>
+  </div>
+
   <p v-if="errore && !loggedIn" class="errore">{{ errore }}</p>
 
   <div v-if="loggedIn" class="chat">
-    <h2>
+    <h2 style="position: relative;">
       <button v-if="!drawerOpen" class="drawer-btn" @click="drawerOpen = true">☰</button>
-      Assistente ONO
+      assistente ono
       <button class="darkmode-btn" @click="toggleDarkMode" title="Dark mode">
         <img src="/darkmode.png" alt="Dark mode" style="width:40px;height:40px;" />
       </button>
-    </h2>
-    <div class="chat-messages" ref="messagesContainer">
-      <div v-for="(msg, i) in messages" :key="i" :class="msg.sender">
-        <b>{{ msg.sender === "user" ? "Tu" : "Bot" }}:</b>
-        <span v-if="msg.sender === 'bot' && isLoading && !msg.text">
-          <span class="spinner"></span>
-        </span>
-        {{ msg.text }}
+      <button v-if="isAdmin" class="settings-btn" @click="showSettings = true" title="Impostazioni" style="position: absolute; right: 70px; top: 30px; background: transparent; border: none; cursor: pointer; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <img src="/settings.png" alt="Settings" style="width:36px;height:36px;" />
+      </button>
+      <button v-if="loggedIn" class="logout-btn" @click="logout" title="Logout" style="position: absolute; right: 60px; top: 30px; background: transparent; border: none; cursor: pointer; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <img src="/logout.svg" alt="Logout" style="width:36px;height:36px;" />
+      </button>
+      <button v-if="loggedIn" class="info-btn" @click="showInfoModal = true" title="Info" style="position: absolute; right: 20px; top: 30px; background: transparent; border: none; cursor: pointer; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <img src="/info.svg" alt="Info" style="width:36px;height:36px;" />
+      </button>
+  <!-- MODALE INFO README -->
+  <div v-if="showInfoModal" class="modal-overlay" @click.self="showInfoModal = false">
+    <div class="modal" style="max-width: 100%; max-height: 90vh; overflow-y: auto;">
+      <ReadmeViewer />
+      <button class="modal-cancel" @click="showInfoModal = false" style="margin-top:18px">Chiudi</button>
+    </div>
+  </div>
+
+
+  <!-- MODALE SETTINGS: TABELLA UTENTI E PASSWORD -->
+  <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
+    <div class="modal settings-modal-darkmode">
+      <h3 class="settings-title" style="color: #babdc4;">Gestione utenti</h3>
+      <div v-if="usersLoading" class="settings-loading">Caricamento utenti...</div>
+      <div v-else>
+        <div class="user-table-wrapper">
+          <table class="user-table-beautiful settings-table-center">
+            <thead>
+              <tr>
+                <th class="settings-th"><img src="/account.png" class="user-icon-img" alt="Account"/> Username</th>
+                <th class="settings-th"><img src="/lock.svg" class="lock-icon-img" alt="Lock"/> 
+                <br>
+                Password</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="user in users" :key="user.id">
+                <td class="settings-td">
+                  <div class="user-cell settings-user-cell">
+                    <span class="user-name">{{ user.username }}</span>
+                  </div>
+                </td>
+                <td class="settings-td">
+                  <div class="password-cell settings-password-cell">
+                    <template v-if="user.editingPassword">
+                      <input
+                        v-model="user.editPassword"
+                        :type="user.showPassword ? 'text' : 'password'"
+                        class="password-input settings-password-input"
+                        :readonly="false"
+                        placeholder="Nuova password"
+                      />
+                      <button @click="togglePassword(user)" class="toggle-password-btn settings-btn">{{ user.showPassword ? 'Nascondi' : 'Mostra' }}</button>
+                      <button @click="savePassword(user)" class="toggle-password-btn settings-btn settings-btn-save">Salva</button>
+                      <button @click="cancelEditPassword(user)" class="toggle-password-btn settings-btn settings-btn-cancel">Annulla</button>
+                    </template>
+                    <template v-else>
+                      <input
+                        :type="user.showPassword ? 'text' : 'password'"
+                        :value="user.password"
+                        readonly
+                        class="password-input settings-password-input"
+                      />
+                      <button @click="togglePassword(user)" class="toggle-password-btn settings-btn">{{ user.showPassword ? 'Nascondi' : 'Mostra' }}</button>
+                      <button @click="startEditPassword(user)" class="toggle-password-btn settings-btn settings-btn-edit">Modifica</button>
+                    </template>
+                  </div>
+                  <div v-if="user.passwordFeedback" :class="{'success': user.passwordFeedbackType==='success', 'error': user.passwordFeedbackType==='error'}" class="settings-feedback">{{ user.passwordFeedback }}</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="users.length === 0" class="settings-no-users">Nessun utente trovato.</div>
       </div>
+      <button class="modal-cancel settings-btn-close" @click="showSettings = false">Chiudi</button>
+    </div>
+  </div>
+
+
+    </h2>
+
+    <div class="chat-messages" ref="messagesContainer" style="display: flex; flex-direction: column; align-items: stretch;">
+      <Message 
+        v-for="(msg, i) in messages"
+        :key="i"
+        :text="msg.text" 
+        :sender="msg.sender" 
+        :loading="isLoading && msg.sender === 'bot' && !msg.text" 
+      />
     </div>
     <div class="logo-ono-bg"></div>
     <div class="chat-footer">
-        <form @submit.prevent="() => sendMessage(chatId)" class="chat-form">
-          <!-- Bottone allega e menu -->
-          <button type="button" class="allega-btn" title="Allega" @click="toggleAllegaMenu">
-            <img :src="allegaIcon" alt="Allega" style="width: 28px; height: 28px" />
-          </button>
-          <div v-if="showAllegaMenu" class="allega-menu-overlay" @click="closeAllegaMenu">
-            <div class="allega-menu" @click.stop>
-              <button type="button" @click="openFileDialog">File</button>
-              <button type="button" @click="openImageDialog">Immagini</button>
-            </div>
+      <form @submit.prevent="() => sendMessage(chatId)" class="chat-form" style="position: relative; width: 100%;">
+        <div v-if="showOptions" class="options-multichoice options-above-input" style="position: absolute; left: 50%; top: -70px; transform: translateX(-50%); width: max-content; min-width: 300px; z-index: 20;">
+          <div class="options-center-wrapper">
+            <button v-for="option in optionsList" :key="option" @click="selectOption(option)" class="option-btn">{{ option }}</button>
           </div>
-          <input
-            v-model="chatInput"
-            type="text"
-            placeholder="Scrivi un messaggio..."
-            autocomplete="off"
-            :disabled="isLoading"
-            color = "#fff6fc"
-          />
+        </div>
+        <input
+          v-model="chatInput"
+          type="text"
+          placeholder="Scrivi un messaggio..."
+          autocomplete="off"
+          :disabled="isLoading"
+          color = "#fff6fc"
+        />
+        <button
+          type="button"
+          class="voice-btn"
+          title="Messaggio vocale"
+          @click="startVoiceMessage"
+          :disabled="isLoading"
+        >
+          <img :src="micIcon" alt="Microfono" style="width: 40px; height: 40px" />
+        </button>
+        <button @click="stopRecognition" type="button" class="stop-btn" title="Ferma registrazione">
+          <img src="/stop.white.png" alt="Stop" style="width: 40px; height: 40px" />
+        </button>
+        <button v-if="lastUserAudioUrl" @click="playLastUserAudio" type="button" class="play-audio-btn" title="Ascolta l'ultimo audio registrato">
+          ▶️ Ascolta
+        </button>
+        
+
+        <span style="position: relative; display: inline-block; width: 60px; height: 60px;">
           <button
-            type="button"
-            class="voice-btn"
-            :class="{ recording: isRecording }"
-            title="Messaggio vocale"
-            @click="startVoiceMessage"
+            v-if="!isLoading"
+            type="submit"
+            class="send-btn"
+            title="Invia"
             :disabled="isLoading"
+            style="position: absolute; right: -90px; top: 0px;"
           >
-            <img :src="micIcon" alt="Microfono" style="width: 28px; height: 28px" />
+            <img :src="sendIcon" alt="Invia" style="width: 40px; height: 40px" />
           </button>
-          <button type="submit" class="send-btn" title="Invia" :disabled="isLoading">
-            <img :src="sendIcon" alt="Invia" style="width: 28px; height: 28px" />
+          <button
+            v-if="isLoading"
+            type="button"
+            class="stop-btn"
+            @click="stopGeneration"
+            :title="'Interrompi generazione'"
+            style="position: absolute; left: 0; top: 0;"
+          >
+            <img :src="stopIcon" alt="Stop" style="width: 40px; height: 40px" />
           </button>
-          <button v-if="isLoading" type="button" class="stop-btn" @click="stopGeneration" :title="'Interrompi generazione'">
-            <img :src="stopIcon" alt="Stop" style="width: 28px; height: 28px" />
-          </button>
-        </form>
-      </div>
+        </span>
+      </form>
+    </div>
+
+
   </div>
 
  
@@ -98,19 +250,47 @@
     style="display: none"
     @change="handleImage"
   />
+
+  <!-- MODALE per nuovo titolo chat -->
+  <div v-if="showNewChatModal" class="modal-overlay" @click.self="closeNewChatModal">
+    <div class="modal">
+      <h3>nuova chat</h3>
+      <input
+        v-model="newChatTitle"
+        type="text"
+        placeholder="Titolo della nuova chat"
+        maxlength="30"
+        @keyup.enter="confirmNewChat"
+        autofocus
+      />
+      <div class="modal-actions">
+        <button @click="confirmNewChat" class="modal-confirm">Crea</button>
+        <button @click="closeNewChatModal" class="modal-cancel">Annulla</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 </template>
 
 <script setup>
+import ReadmeViewer from './components/ReadmeViewer.vue';
+import Message from './components/Message.vue'
 import { reactive, ref, watch, nextTick, onMounted, computed } from "vue";
-import allegaImg from "./assets/allega.png";
-import allegaWhiteImg from "./assets/allega.white.png";
 import sendImg from "./assets/send.png";
 import sendWhiteImg from "./assets/send.white.png";
 import micImg from "./assets/mic.png";
 import micWhiteImg from "./assets/mic.white.png";
-import stopImg from "./assets/stop.png";
-import stopWhiteImg from "./assets/stop.white.png";
+import stopImg from "/stop.png";
+import stopWhiteImg from "/stop.white.png";
+import deleteImg from "./assets/delete.png";
+import deleteWhiteImg from "./assets/delete.white.png";
+import { marked } from 'marked' // oppure markdown-it
+const showInfoModal = ref(false);
+// La funzione showInfo non serve più, ora si usa showInfoModal = true
+import editImg from "./assets/edit.svg";
+import editWhiteImg from "./assets/edit.white.svg";
+const editIcon = computed(() => isDark.value ? editImg : editWhiteImg);
 
 const form = reactive({
   username: "",
@@ -120,9 +300,8 @@ const form = reactive({
 const errore = ref("");
 const loggedIn = ref(false);
 const drawerOpen = ref(false);
-const showAllegaMenu = ref(false);
 const isLoading = ref(false);
-
+const showReadmeModal = ref(false);
 const messages = ref([]);
 const messagesContainer = ref(null); // aggiungi questo ref
 const chatInput = ref("");
@@ -131,6 +310,8 @@ const imageInput = ref(null);
 const chatId = ref(1); // deve essere un numero, non stringa
 const userId = ref(null);
 const userChats = ref([]);
+const isAdmin = ref(false);
+
 
 const isDark = ref(false);
 function toggleDarkMode() {
@@ -142,27 +323,44 @@ function toggleDarkMode() {
   }
 }
 
-const allegaIcon = computed(() => isDark.value ? allegaImg : allegaWhiteImg);
 const micIcon = computed(() => isDark.value ? micImg : micWhiteImg);
 const sendIcon = computed(() => isDark.value ? sendImg : sendWhiteImg);
-const stopIcon = computed(() => isDark.value ? stopImg : stopWhiteImg);
+const stopIcon = computed(() => isDark.value ? stopImg : stopImg);
+const deleteIcon = computed(() => isDark.value ? deleteImg : deleteWhiteImg);
 window.stopRequested = false;
 
 function stopGeneration() {
   window.stopRequested = true;
   isLoading.value = false;
+  // Rimuovi l'ultimo messaggio bot vuoto (spinner)
+  const last = messages.value[messages.value.length - 1];
+  if (last && last.sender === 'bot' && !last.text) {
+    messages.value.pop();
+  }
 }
-
+const ip = ref("");
 const stopRequested = ref(false);
 
+async function fetchServerIp() {
+  const res = await fetch("http://"+window.location.hostname+":8000/models/ip");
+  const data = await res.json();
+  ip.value = data.ip;
+}
+onMounted(async () => {
+  await fetchServerIp();
+});
 async function login() {
+  if (!ip.value) {
+    errore.value = "Connessione al server in corso, riprova tra qualche secondo.";
+    return;
+  }
   console.log("Login chiamato");
   if (!form.username || !form.password) {
     errore.value = "Compila tutti i campi!";
     return;
   }
   try {
-    const response = await fetch("http://192.168.1.42:8000/user/login/", {
+    const response = await fetch("http://" + ip.value + ":8000/user/login/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -178,7 +376,18 @@ async function login() {
     if (data.isValid) {
       errore.value = "";
       userId.value = data.user_id;
-      // RIMOSSA la creazione chat qui!
+      // Recupera se admin
+      try {
+        const adminRes = await fetch(`http://${ip.value}:8000/user/${data.user_id}/is_admin`);
+        if (adminRes.ok) {
+          const adminData = await adminRes.json();
+          isAdmin.value = !!adminData.is_admin;
+        } else {
+          isAdmin.value = false;
+        }
+      } catch (e) {
+        isAdmin.value = false;
+      }
       await fetchUserChats();
       // Solo ora imposta loggedIn e resetta il form
       loggedIn.value = true;
@@ -192,10 +401,11 @@ async function login() {
   }
 }
 
+// isAdmin è ora disponibile globalmente per la UI
 async function fetchUserChats() {
   if (!userId.value) return;
   try {
-    const res = await fetch(`http://192.168.1.42:8000/user/chats?user_id=${userId.value}`);
+    const res = await fetch(`http://${ip.value}:8000/user/chats?user_id=${userId.value}`);
     if (res.ok) {
       const data = await res.json();
       userChats.value = data.chats || [];
@@ -214,7 +424,7 @@ async function askBackend(prompt, chat_id, onToken) {
   };
   console.log("Payload inviato a /message/reply/:", payload);
 
-  const response = await fetch("http://192.168.1.42:8000/message/reply/", {
+  const response = await fetch("http://" + ip.value + ":8000/message/reply/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
@@ -281,7 +491,8 @@ async function sendMessage(chat_id) {
       messages: []
     };
     try {
-      const chatRes = await fetch("http://192.168.1.42:8000/chat/create", {
+      // UNIFICA HOST
+      const chatRes = await fetch("http://" + ip.value + ":8000/chat/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(chatPayload)
@@ -291,11 +502,16 @@ async function sendMessage(chat_id) {
         if (chatData.chat_id) {
           chatId.value = chatData.chat_id;
           await fetchUserChats();
-          // Aggiorna il titolo dopo la creazione
-          await fetch(`http://192.168.1.42:8000/chat/update_chat`, {
+          // Correggi il payload per update_chat: serve id, user_id, name, at
+          await fetch(`http://${ip.value}:8000/chat/update_chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: chatId.value , name: chatTitle })
+            body: JSON.stringify({
+              id: chatId.value,
+              user_id: userId.value,
+              name: chatTitle,
+              at: now
+            })
           });
         }
       } else {
@@ -325,68 +541,6 @@ async function sendMessage(chat_id) {
   isLoading.value = false;
 }
 
-const isRecording = ref(false);
-let recognitionInstance = null;
-
-function startVoiceMessage() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    alert("Il riconoscimento vocale non è supportato su questo browser.");
-    return;
-  }
-
-  // Se già sta registrando, fermati
-  if (isRecording.value && recognitionInstance) {
-    recognitionInstance.stop();
-    isRecording.value = false;
-    recognitionInstance = null;
-    return;
-  }
-
-  // Altrimenti, inizia a registrare
-  const recognition = new SpeechRecognition();
-  recognition.lang = "it-IT";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-
-  recognition.onstart = () => {
-    isRecording.value = true;
-  };
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    chatInput.value = transcript;
-  };
-  recognition.onerror = () => {
-    isRecording.value = false;
-    recognitionInstance = null;
-  };
-  recognition.onend = () => {
-    isRecording.value = false;
-    recognitionInstance = null;
-  };
-
-  recognitionInstance = recognition;
-  recognition.start();
-}
-
-function toggleAllegaMenu() {
-  showAllegaMenu.value = !showAllegaMenu.value;
-}
-
-function closeAllegaMenu() {
-  showAllegaMenu.value = false;
-}
-
-function openFileDialog() {
-  closeAllegaMenu();
-  fileInput.value && fileInput.value.click();
-}
-
-function openImageDialog() {
-  closeAllegaMenu();
-  imageInput.value && imageInput.value.click();
-}
-
 function handleFile(event) {
   const file = event.target.files[0];
   if (file) {
@@ -405,7 +559,7 @@ function handleImage(event) {
 
 async function loadChatMessages(chat_id) {
   try {
-    const res = await fetch(`http://192.168.1.62:8000/chat/${chat_id}/messages`);
+    const res = await fetch(`http://${ip.value}:8000/chat/${chat_id}/messages`);
     if (res.ok) {
       const data = await res.json();
       messages.value = (data.messages || []).map(msg => ({
@@ -421,16 +575,32 @@ async function loadChatMessages(chat_id) {
 // Sostituisci il click handler nel drawer:
 // <li v-for="chat in userChats" :key="chat.id" @click="selectChat(chat.id)" ...>
 function selectChat(id) {
-  chatId.value = id;
+  // Deseleziona tutte le chat
+  userChats.value.forEach(c => c.selected = false);
+  // Seleziona solo quella cliccata
+  const chat = userChats.value.find(c => Number(c.id) === Number(id));
+  if (chat) chat.selected = true;
+  chatId.value = Number(id);
   drawerOpen.value = false;
-  loadChatMessages(id);
+  loadChatMessages(chatId.value);
 }
+
+const showNewChatModal = ref(false);
+const newChatTitle = ref("");
 
 function addNewChat() {
   if (!userId.value) return;
-  let titolo = prompt("Titolo della nuova chat:");
-  if (!titolo) return;
-  titolo = titolo.trim();
+  newChatTitle.value = "";
+  showNewChatModal.value = true;
+}
+
+function closeNewChatModal() {
+  showNewChatModal.value = false;
+  newChatTitle.value = "";
+}
+
+function confirmNewChat() {
+  let titolo = newChatTitle.value.trim();
   if (!titolo) return;
   const now = Math.floor(Date.now() / 1000);
   const chatPayload = {
@@ -439,7 +609,8 @@ function addNewChat() {
     at: now,
     messages: []
   };
-  fetch("http://192.168.1.62:8000/chat/create", {
+  // UNIFICA HOST
+  fetch("http://" + ip.value + ":8000/chat/create", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(chatPayload)
@@ -451,9 +622,34 @@ function addNewChat() {
         await fetchUserChats();
         messages.value = [];
         drawerOpen.value = false;
+        closeNewChatModal();
       }
     })
-    .catch(e => console.error("Errore creazione nuova chat:", e));
+    .catch(e => {
+      console.error("Errore creazione nuova chat:", e);
+      closeNewChatModal();
+    });
+}
+
+// Elimina una chat
+async function deleteChat(chatIdToDelete) {
+  
+  try {
+    const res = await fetch(`http://${ip.value}:8000/chat/delete/${chatIdToDelete}`,
+      { method: 'DELETE' });
+    if (res.ok) {
+      await fetchUserChats();
+      if (chatId.value === chatIdToDelete) {
+        chatId.value = null;
+        messages.value = [];
+      }
+    } else {
+      const err = await res.text();
+      alert('Errore eliminazione chat: ' + err);
+    }
+  } catch (e) {
+    alert('Errore di rete nell\'eliminazione chat');
+  }
 }
 
 // Scroll automatico ogni volta che cambia messages
@@ -470,7 +666,8 @@ watch(
   }
 );
 
-onMounted(() => {
+
+onMounted(async () => {
   // Scrolla sempre in fondo quando l'input riceve focus
   const input = document.querySelector('.chat-form input');
   if (input) {
@@ -484,10 +681,335 @@ onMounted(() => {
     });
   }
 });
+
+// AGGIUNGI questa funzione per evitare l'errore resetForm is not defined
+function resetForm() {
+  form.username = "";
+  form.password = "";
+}
+
+
+// Gestione reset password integrata nella pagina
+const showResetPassword = ref(false);
+const resetUsername = ref("");
+const resetNewPassword = ref("");
+const resetFeedback = ref("");
+const resetFeedbackType = ref("");
+
+async function handleReset() {
+  resetFeedback.value = "";
+  if (!resetUsername.value || !resetNewPassword.value) {
+    resetFeedback.value = "Compila tutti i campi.";
+    resetFeedbackType.value = "error";
+    return;
+  }
+  if (resetNewPassword.value.length < 4) {
+    resetFeedback.value = "La password deve essere di almeno 4 caratteri.";
+    resetFeedbackType.value = "error";
+    return;
+  }
+  // Recupera user id e verifica admin
+  let userIdTmp = null;
+  let isAdminTmp = false;
+  try {
+    const res = await fetch(`http://${ip.value}:8000/user/by_username/${encodeURIComponent(resetUsername.value)}`);
+    if (res.ok) {
+      const data = await res.json();
+      userIdTmp = data.user_id;
+      isAdminTmp = !!data.is_admin;
+    }
+  } catch {}
+  if (!userIdTmp) {
+    resetFeedback.value = "Utente non trovato.";
+    resetFeedbackType.value = "error";
+    return;
+  }
+  if (!isAdminTmp) {
+    resetFeedback.value = "Solo gli amministratori possono resettare la password. Contatta un admin.";
+    resetFeedbackType.value = "info";
+    return;
+  }
+  // Procedi con reset
+  try {
+    const res = await fetch(`http://${ip.value}:8000/user/update_password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userIdTmp, new_password: resetNewPassword.value })
+    });
+    const data = await res.json();
+    if (data.success) {
+      resetFeedback.value = "Password aggiornata con successo!";
+      resetFeedbackType.value = "success";
+      setTimeout(() => {
+        showResetPassword.value = false;
+        resetUsername.value = "";
+        resetNewPassword.value = "";
+        resetFeedback.value = "";
+        resetFeedbackType.value = "";
+      }, 1500);
+    } else {
+      resetFeedback.value = "Errore durante l'aggiornamento della password.";
+      resetFeedbackType.value = "error";
+    }
+  } catch {
+    resetFeedback.value = "Errore di rete.";
+    resetFeedbackType.value = "error";
+  }
+}
+// --- MULTICHOICE BUTTONS STATE ---
+const showOptions = ref(false);
+const optionsList = ref(["Sì", "No", "Dimmi di più"]);
+
+function selectOption(option) {
+  // Simula invio come messaggio utente
+  showOptions.value = false;
+  chatInput.value = option;
+  sendMessage(chatId.value);
+}
+
+// Mostra i pulsanti solo se l'ultimo messaggio è del bot
+watch(
+  () => messages.value.length,
+  () => {
+    if (
+      messages.value.length > 0 &&
+      messages.value[messages.value.length - 1].sender === "bot"
+    ) {
+      showOptions.value = true;
+    } else {
+      showOptions.value = false;
+    }
+  }
+);
+// Stato per mostrare la modale settings
+const showSettings = ref(false);
+/* Bottone impostazioni (settings) */
+// --- MODALE GESTIONE UTENTI (ADMIN) ---
+const users = ref([]);
+const usersLoading = ref(false);
+
+async function fetchUsers() {
+  usersLoading.value = true;
+  try {
+    const res = await fetch(`http://${ip.value}:8000/user/all`);
+    const data = await res.json();
+    users.value = (data || []).map(u => ({
+      ...u,
+      showPassword: false
+    }));
+  } catch (e) {
+    users.value = [];
+  } finally {
+    usersLoading.value = false;
+  }
+}
+
+function togglePassword(user) {
+  user.showPassword = !user.showPassword;
+}
+
+watch(showSettings, (val) => {
+  if (val) fetchUsers();
+});
+
+
+function startEditPassword(user) {
+  user.editingPassword = true;
+  user.editPassword = user.password;
+  user.passwordFeedback = '';
+  user.passwordFeedbackType = '';
+}
+
+function cancelEditPassword(user) {
+  user.editingPassword = false;
+  user.editPassword = undefined;
+  user.passwordFeedback = '';
+  user.passwordFeedbackType = '';
+}
+
+async function savePassword(user) {
+  if (!user.editPassword || user.editPassword.length < 4) {
+    user.passwordFeedback = 'La password deve essere di almeno 4 caratteri.';
+    user.passwordFeedbackType = 'error';
+    return;
+  }
+  user.passwordFeedback = '';
+  user.passwordFeedbackType = '';
+  try {
+    const res = await fetch(`http://${ip.value}:8000/user/update_password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: user.id, new_password: user.editPassword })
+    });
+    const data = await res.json();
+    if (data.success) {
+      user.password = user.editPassword;
+      user.editingPassword = false;
+      user.editPassword = undefined;
+      user.passwordFeedback = 'Password aggiornata!';
+      user.passwordFeedbackType = 'success';
+      setTimeout(() => {
+        user.passwordFeedback = '';
+        user.passwordFeedbackType = '';
+      }, 1500);
+    } else {
+      user.passwordFeedback = 'Errore durante il salvataggio.';
+      user.passwordFeedbackType = 'error';
+    }
+  } catch {
+    user.passwordFeedback = 'Errore di rete.';
+    user.passwordFeedbackType = 'error';
+  }
+}
+const showRegister = ref(false);
+const registerUsername = ref("");
+const registerPassword = ref("");
+const registerFeedback = ref("");
+const registerFeedbackType = ref("");
+
+async function handleRegister() {
+  registerFeedback.value = "";
+  if (!registerUsername.value || !registerPassword.value) {
+    registerFeedback.value = "Compila tutti i campi.";
+    registerFeedbackType.value = "error";
+    return;
+  }
+  if (registerPassword.value.length < 4) {
+    registerFeedback.value = "La password deve essere di almeno 4 caratteri.";
+    registerFeedbackType.value = "error";
+    return;
+  }
+  try {
+    const res = await fetch(`http://${ip.value}:8000/user/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: registerUsername.value, password: registerPassword.value, is_admin: false })
+    });
+    const data = await res.json();
+    if (res.ok && data.userID) {
+      registerFeedback.value = "Registrazione avvenuta! Ora puoi accedere.";
+      registerFeedbackType.value = "success";
+      setTimeout(() => {
+        showRegister.value = false;
+        registerUsername.value = "";
+        registerPassword.value = "";
+        registerFeedback.value = "";
+        registerFeedbackType.value = "";
+      }, 1500);
+    } else {
+      registerFeedback.value = data.detail || "Errore durante la registrazione.";
+      registerFeedbackType.value = "error";
+    }
+  } catch {
+    registerFeedback.value = "Errore di rete.";
+    registerFeedbackType.value = "error";
+  }
+}
+// Gestione rinomina chat
+function startRenameChat(chat) {
+  chat.editingName = true;
+  chat.newName = chat.name;
+}
+function cancelRenameChat(chat) {
+  chat.editingName = false;
+  chat.newName = '';
+}
+async function confirmRenameChat(chat) {
+  const newName = (chat.newName || '').trim();
+  if (!newName || newName === chat.name) {
+    chat.editingName = false;
+    return;
+  }
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const payload = {
+      id: chat.id,
+      user_id: userId.value,
+      name: newName.length > 30 ? newName.slice(0, 30) + '…' : newName,
+      at: now
+    };
+    const res = await fetch(`http://${ip.value}:8000/chat/update_chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      chat.name = payload.name;
+    }
+  } catch {}
+  chat.editingName = false;
+}
+function logout() {
+  userId.value = null;
+  chatId.value = 1;
+  messages.value = [];
+  userChats.value = [];
+  isAdmin.value = false;
+  errore.value = "";
+  loggedIn.value = false;
+  resetForm();
+}
+function showInfo() {
+  window.open('/README.md', '_blank');
+}
+// --- AUDIO RECORDING ---
+
+let mediaRecorder = null;
+const lastUserAudioUrl = ref(null);
+const audioChunks = [];
+
+function startVoiceMessage() {
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert('getUserMedia non disponibile.');
+      return;
+    }
+    if (typeof window.MediaRecorder === 'undefined') {
+      alert('MediaRecorder non disponibile.');
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      try {
+        mediaRecorder = new window.MediaRecorder(stream);
+      } catch (err) {
+        alert('MediaRecorder non supporta il tipo di stream audio.');
+        return;
+      }
+      audioChunks.length = 0;
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) audioChunks.push(e.data);
+      };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        lastUserAudioUrl.value = URL.createObjectURL(blob);
+      };
+      mediaRecorder.start();
+    }).catch((err) => {
+      alert('Permesso microfono negato o non disponibile.');
+    });
+  } catch (e) {
+    alert('Errore JS: ' + e);
+  }
+}
+
+function stopRecognition() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+}
+
+function playLastUserAudio() {
+  if (lastUserAudioUrl.value) {
+    const audio = new Audio(lastUserAudioUrl.value);
+    audio.play();
+  }
+}
+
 </script>
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css?family=Inter:400,700&display=swap");
+@import "./assets/font/stylesheet.css";
 
 html, body, #app {
   position: fixed;
@@ -498,7 +1020,7 @@ html, body, #app {
   padding: 0;
   overflow: hidden !important;
   box-sizing: border-box;
-  touch-action: none; /* Previene scroll con el dedo */
+  touch-action: none; /* Previene scroll con el dito */
 }
 
 .appFull {
@@ -506,30 +1028,46 @@ html, body, #app {
   top: 0;
   left: 0;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  font-family: "Inter", sans-serif;
+  /* font-family spostato sotto */
   z-index: 1;
   background: transparent;
   touch-action: none; /* Previene scroll táctil */
+  align-items: center;
+  justify-content: center;
+
 }
+
+/* Applica Aptos a tutto tranne header e login */
+body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .drawer, .drawer-header ul, .drawer-close, .add-chat-btn, .errore, .logo-ono, .logo-ono-bg, .selected-chat, .send-btn, .voice-btn, .stop-btn, .modal, .modal-actions, .modal-confirm, .modal-cancel, pre, code, table, th, td {
+  font-family: "Aptos", sans-serif !important;
+}
+
+/* Escludi header e login */
+.chat h2,
+.login-title,
+.login-form {
+  font-family: "Nokia Expanded", sans-serif !important;
+}
+
 /* Chat box principale */
 .chat {
   position: relative;
   width: 100%;
   height: 100%; /* aumenta la percentuale per occupare più spazio nella container */
   background: rgba(66, 64, 64, 0.85);
-  /*border-radius: 22px;*/
   box-sizing: border-box;
   display: flex;
+  flex: 1;
+  flex-grow: 1;
   flex-direction: column;
   box-shadow: 0 4px 24px rgba(44, 62, 80, 0.12);
-  border: none;
-  /* Effetto vetro */
   backdrop-filter: blur(4px);
+  border-radius: 0; /* rimosso ogni arrotondamento */
 }
 
 /* Header chat */
@@ -539,7 +1077,7 @@ html, body, #app {
   height:100px;
   background: #5b6770;
   color: #fff;
-  font-size: 2.3em;
+  font-size: 1.8em;
   font-family: "Nokia Expanded", sans-serif;
   font-weight: 700;
   margin: 0;
@@ -556,7 +1094,7 @@ html, body, #app {
 
 .darkmode-btn {
   position: absolute;
-  right: 40px;
+  right: 80px; /* spostato più a sinistra */
   top: 30px;
   background: transparent;
   border: none;
@@ -575,15 +1113,17 @@ html, body, #app {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  margin-bottom: 0; /* <--- Cambia da 24px a 0 */
-  padding: 28px 18px 0 18px;
+  margin-bottom: 0;
+  padding: 0 0 0 0;
   background: transparent;
-  border-radius: 0 0 22px 22px;
+  border-radius: 0; /* rimosso ogni arrotondamento */
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 0;
   scroll-behavior: smooth;
   width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .user {
@@ -599,7 +1139,7 @@ html, body, #app {
   word-break: break-word;
   text-align: right;
   box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
-  margin-right: 40px;
+  margin-right: 10px;
 }
 
 .bot {
@@ -617,6 +1157,7 @@ html, body, #app {
   box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
   animation: fadeInUp 0.3s;
   z-index: 1; /* Assicurati che i messaggi del bot siano sopra */
+  margin-left: 10px;
 }
 
 @keyframes fadeInUp {
@@ -635,8 +1176,8 @@ html, body, #app {
   width: 100%;
   background: transparent;
   border-radius: 0 0 0 0;
-  padding: 5px 0 px 0;
-  margin-bottom: 0px; /* <--- aggiungi o aumenta questo valore */
+  padding: 0; /* padding-bottom a 0 */
+  margin-bottom: 0px;
   display: flex;
   justify-content: center;
   z-index: 2;
@@ -654,6 +1195,7 @@ html, body, #app {
   background: rgba(107, 107, 107, 0.85);
   box-shadow: 0 2px 12px rgba(44, 62, 80, 0.08);
   margin-bottom: 0;
+  padding-bottom: 0; /* aggiunto per sicurezza */
 }
 
 .chat-form input {
@@ -664,24 +1206,17 @@ html, body, #app {
   border-radius: 40px;
   border: none;
   padding: 10px 18px; 
-  font-size: 18px;
+  font-size: 30px;
   background: rgba(107, 107, 107, 0);
   margin-bottom: 0;
   outline: none;
   transition: box-shadow 0.2s, border 0.2s;
-  box-shadow: 0 1px 4px rgba(44, 62, 80, 0.06);
-  margin-left: 35px;
+  margin-left: 5%;
   color: #f2f6fc;
   width: 100%;
 
 }
 
-/* Placeholder più chiaro per l'input chat */
-.chat-form input::placeholder {
-  color: #a1a1a1;
-  font-size: 1.1em;
-  font-weight: 500;
-}
 
 .errore {
   color: #ff4d4f;
@@ -693,23 +1228,32 @@ html, body, #app {
 }
 
 /* Materiali_ONO_Lean_logistics_V1-01 1 */
+
 .logo-ono {
   width: 60px;
   height: 50px;
-  position: relative;
-  left: 50%;
-  bottom: 50%; 
   background: url("/Materiali_ONO_Lean_logistics_V1-01.png") no-repeat center/contain;
   border-radius: 20px;
   z-index: 3;
   pointer-events: none;
 }
 
+.login-logo-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-logo {
+  position: static;
+  width: 100px;
+  height: 75px;}
+
 /* Sfondo logo ONO */
 .logo-ono-bg {
   position: absolute;
   left: 50%;
-  bottom: 1200px; /* più vicino al fondo */
+  bottom: 38%;
   width: 250px;
   height: 200px;
   transform: translateX(-50%);
@@ -785,7 +1329,6 @@ html, body, #app {
   color: #5b6770;
   letter-spacing: 2px;
   background-color:  rgba(98, 97, 97, 0);
-  /* Rendi la sezione header flessibile verticalmente */
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -797,7 +1340,7 @@ html, body, #app {
   padding-left: 0;
   margin: 0;
   color: #fff;
-  max-height: 45vh;
+  max-height: 100%;
   overflow-y: auto;
   /* Aggiungi un po' di padding a destra per la scrollbar */
   padding-right: 8px;
@@ -811,33 +1354,13 @@ html, body, #app {
     transform: translateX(0);
   }
 }
-
-.allega-btn {
-  background: transparent !important;
-  box-shadow: none !important;
-  color: #ffffff00;
-  border: none;
-  font-size: 1.5em;
-  cursor: pointer;
-  margin-left: 20px;
-  padding: 0 8px 0 10px;
-  display: flex;
-  align-items: center;
-  transition: color 0.2s;
-  width: 60px;
-  height: 60px;
-  
-}
-
-
 .send-btn {
   background: transparent !important;
   box-shadow: none !important;
   color: #ffffff00;
   border: none;
-  font-size: 1.5em;
   cursor: pointer;
-  margin-right: 20px;
+  margin-right: 100px !important; /* sposta più a sinistra */
   padding: 0 8px 0 10px;
   display: flex;
   align-items: center;
@@ -852,9 +1375,8 @@ html, body, #app {
   box-shadow: none !important;
   color: #ffffff00;
   border: none;
-  font-size: 1.5em;
   cursor: pointer;
-  margin-right: 20px;
+  margin-right: 10px; /* sposta anche il microfono più a sinistra */
   padding: 0 8px 0 10px;
   display: flex;
   align-items: center;
@@ -880,61 +1402,12 @@ html, body, #app {
   align-items: center;
   justify-content: center;
 }
-
-/* Stili per il menu Allega */
-.allega-menu {
-  position: absolute;
-  bottom: 60px;
-  left: 24px;
-  box-shadow: 0 4px 16px rgba(44, 62, 80, 0.13);
-  padding: 12px 0;
-  display: flex;
-  flex-direction: column;
-  min-width: 120px;
-  z-index: 200;
-  color: #f2f6fc;
-}
-.allega-menu button {
-  border: none;
-  color: #5b6770;
-  font-size: 1em;
-  padding: 10px 24px;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.2s;
-  background-color: transparent;
-}
-
-/* Nuovi stili per il menu Allega (overlay) */
-.allega-menu-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 199;
-  background: transparent;
-}
-
-.allega-menu-close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: transparent;
-  color: #5b6770;
-  border: none;
-  font-size: 1.5em;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-.allega-menu-close:hover {
-  color: #8ca6db;
-  background-color: transparent;
-}
-
 .spinner {
   display: inline-block;
-  width: 22px;
-  height: 22px;
+  width: 40px;
+  height: 40px;
   border: 3px solid #8ca6db;
-  border-top: 3px solid #fff;
+  border-top: 5px solid #fff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin-right: 10px;
@@ -954,12 +1427,13 @@ html, body, #app {
 }
 
 .selected-chat {
-  background: var(--accent);
-  color: #5b6770;
-  border-radius: 8px;
-  z-index: 200;
-  background-color: #8ca6db !important;
-}
+  background-color: #5b6770 !important;
+  font-weight: bold !important;
+  box-shadow: 0 0 8px #419ffc55 !important;
+  z-index: 2 !important;
+  border-radius: 10px !important;
+  }
+
 .add-chat-btn {
   background: #5b6770;
   color: #fff;
@@ -973,21 +1447,24 @@ html, body, #app {
 }
 .drawer-h2{
   font-weight: bold;
-  font-size: 1.4em;
-  margin-bottom: 8px;
+  font-size: 1.5em;
+  margin-bottom: 0px;
   color: #ffffff;
   width: 100%;
+  font-family: "Aptos", sans-serif;
+
 }
 
 /* Login styles */
 .login-title {
-  font-size: 3rem;
+  font-size: 2.3rem;
   font-weight: bold;
   color: #5b6770;
   text-align: center;
   margin-top: 60px;
   margin-bottom: 24px;
   letter-spacing: 2px;
+  font-family: "Nokia Expanded", sans-serif;
 }
 
 .login-form {
@@ -998,9 +1475,8 @@ html, body, #app {
   max-width: 400px;
   margin: 0 auto 32px auto;
   padding: 32px 24px;
-  background: rgba(255,255,255,0.95);
+  background: rgba(255, 255, 255, 0);
   border-radius: 18px;
-  box-shadow: 0 4px 24px rgba(44, 62, 80, 0.12);
 }
 
 .login-form input {
@@ -1040,7 +1516,6 @@ body.darkmode .chat h2 {
 }
 body.darkmode .user {
   color: #fff !important;
-  background: linear-gradient(135deg, #8ca6db 60%, #5b6770 100%) !important;
 }
 body.darkmode .bot {
   color: #2f3336 !important;
@@ -1050,9 +1525,6 @@ body.darkmode .errore {
   color: #ff4d4f !important;
 }
 body.darkmode .drawer-header {
-  color: #5b6770 !important;
-}
-body.darkmode .allega-menu button {
   color: #5b6770 !important;
 }
 body.darkmode .chat-footer {
@@ -1066,7 +1538,6 @@ body.darkmode .drawer-btn {
   background: #5b6770 !important;
 }
 body.darkmode .drawer-close,
-body.darkmode .allega-btn,
 body.darkmode .send-btn,
 body.darkmode .voice-btn {
   background: transparent !important;
@@ -1082,10 +1553,6 @@ body.darkmode .drawer-overlay {
 body.darkmode .drawer {
   background: #fff !important;
 }
-body.darkmode .allega-menu {
-  background: #fff !important;
-}
-
 
 body.darkmode .spinner {
   border: 3px solid #8ca6db !important;
@@ -1109,6 +1576,10 @@ body.darkmode .drawer-h2{
 body.darkmode .logo-ono-bg {
   opacity: 0.15 !important;
 }
+body.darkmode .chat-form input {
+  color: #000000 !important;
+}
+
 
 body,
 body.darkmode,
@@ -1118,16 +1589,13 @@ body.darkmode,
 .user,
 .bot,
 .drawer-header,
-.allega-menu,
 .drawer,
 .chat-form,
 .chat-form input,
 .drawer-btn,
 .drawer-close,
-.allega-btn,
 .send-btn,
-.voice-btn,
-.selected-chat {
+.voice-btn {
   transition: background 0.4s, color 0.4s, border 0.4s, box-shadow 0.4s;
 }
 
@@ -1165,8 +1633,469 @@ body.darkmode,
   }
 }
 
-button:focus, .add-chat-btn:focus, .drawer-close:focus, .drawer-btn:focus, .darkmode-btn:focus, .allega-btn:focus, .voice-btn:focus, .send-btn:focus {
+/* Nuovi stili per la modale nuova chat */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(44, 62, 80, 0.25);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal {
+  background: #ffffff00;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(44, 62, 80, 0.18);
+  padding: 48px 40px 32px 40px;
+  min-width: 340px;
+  max-width: 95vw;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  position: relative;
+}
+.modal h3 {
+  font-size: 2.2em;
+  font-family: "Aptos", sans-serif;
+  color: #5b6770;
+  margin-bottom: 12px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.modal input[type="text"] {
+  font-size: 1.3em;
+  padding: 14px 20px;
+  border-radius: 10px;
+  border: 1.5px solid #babdc4;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 8px;
+  background: #f7f8fa;
+  color: #333;
+  outline: none;
+  transition: border 0.2s;
+}
+.modal input[type="text"]:focus {
+  border: 1.5px solid #8ca6db;
+}
+.modal-actions {
+  display: flex;
+  gap: 18px;
+  width: 100%;
+  justify-content: center;
+  margin-top: 10px;
+}
+.modal-confirm {
+  background: linear-gradient(135deg, #8ca6db 60%, #5b6770 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 32px;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.modal-cancel {
+  background: #babdc4;
+  color: #2f3336;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 32px;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.modal-confirm:hover {
+  background: linear-gradient(135deg, #5b6770 60%, #8ca6db 100%);
+}
+.modal-cancel:hover {
+  background: #8ca6db;
+  color: #fff;
+}
+@media (max-width: 600px) {
+  .modal {
+    min-width: 90vw;
+    padding: 32px 8vw 24px 8vw;
+  }
+  .modal h3 {
+    font-size: 1.3em;
+  }
+}
+button:focus, .add-chat-btn:focus, .drawer-close:focus, .drawer-btn:focus, .darkmode-btn:focus, .voice-btn:focus, .send-btn:focus {
   outline: none !important;
   box-shadow: none !important;
+}
+.login-form-input {
+  font-size: 1.3rem;
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: 1px solid #babdc4;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+  display: block;
+  align-content: center;
+}
+
+.center-reset-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 320px;
+}
+
+/* Centra la pagina di reset password */
+.reset-password-page-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+}
+.reset-password-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 400px;
+  width: 100%;
+}
+.reset-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #5b6770;
+  text-align: center;
+  margin-bottom: 18px;
+  letter-spacing: 2px;
+  font-family: "Aptos", sans-serif;
+}
+.reset-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+}
+.reset-form button[type="submit"] {
+  font-size: 1.2rem;
+  padding: 12px 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #8ca6db 60%, #5b6770 100%);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+.reset-form button[type="submit"]:hover {
+  background: linear-gradient(135deg, #5b6770 60%, #8ca6db 100%);
+}
+.back-to-login {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: #5b6770;
+  text-decoration: underline;
+  font-size: 1em;
+  cursor: pointer;
+}
+.success {
+  color: #2e7d32;
+  font-weight: bold;
+  margin-top: 10px;
+  text-align: center;
+}
+.error {
+  color: #ff4d4f;
+  font-weight: bold;
+  margin-top: 10px;
+  text-align: center;
+}
+.info {
+  color: #5b6770;
+  font-weight: bold;
+  margin-top: 10px;
+  text-align: center;
+}
+.options-multichoice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+.options-center-wrapper {
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 0;
+}
+.options-above-input {
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+  padding-bottom: 0 !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: -70px !important;
+  transform: translateX(-50%) !important;
+  width: max-content !important;
+  min-width: 300px;
+  z-index: 20;
+}
+.option-btn {
+  font-size: 1.1rem;
+  padding: 12px 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #8ca6db 60%, #5b6770 100%);
+  color: #000000;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.options-btn:hover {
+  background: linear-gradient(135deg, #5b6770 60%, #8ca6db 100%);
+}
+
+/* Pulsanti sopra la chat input */
+.options-above-input {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+  padding-bottom: 0 !important;
+  position: relative;
+  z-index: 10;
+  
+}
+.settings-btn {
+  margin-right: 205px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.settings-btn:hover {
+  background: #5b6770;
+  color: #ffffff;
+}
+.user-table {
+  width: 100%;
+  margin-top: 20px;
+  color: #000000;
+  background-color: #5b6770;
+  
+}
+.user-name{
+  font-size: 50px;
+
+
+}
+.user-cell{
+  margin-bottom: 15px;
+}
+
+.password-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.password-input {
+  font-size: 1.1rem !important;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #babdc4;
+  width: auto;
+  min-width: 300px;
+  margin-bottom: 0;
+  background: #f7f8fa;
+  color: #333;
+  outline: none;
+  transition: border 0.2s;
+  box-sizing: border-box;
+  flex: 1 1 ;
+}
+.toggle-password-btn{
+  width: auto;
+  height: 50px;
+  font-size: medium;
+  margin-right: 0px;
+  
+}
+.logout-btn {
+  background: #5b6770;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.2s;
+  margin-right: 150px;
+}
+.info-btn {
+  background: #8ca6db;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.2s;
+  margin-right: 125px;
+}
+/* Assicurati che questi siano nel tuo <style scoped> in App.vue */
+.modal-overlay {
+  background: rgba(255, 255, 255, 0.721);  
+  z-index: 99999 !important; /* ALTISSIMO */
+  position: fixed !important; /* FISSO SULLA FINESTRA */
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important; /* TUTTA LA LARGHEZZA */
+  height: 100vh !important; /* TUTTA L'ALTEZZA */
+}
+
+.readme-modal {
+  border: 5px solid blue !important; /* BORDO BLU SPESSO */
+  background-color: white !important; /* SFONDO BIANCO */
+  opacity: 1 !important; /* COMPLETAMENTE OPACO */
+  min-width: 300px !important; /* MINIMO */
+  min-height: 200px !important; /* MINIMO */
+}
+.settings-modal-darkmode {
+  background: var(--settings-bg, #23272f);
+  color: var(--settings-fg, #fff);
+  border-radius: 18px;
+  box-shadow: 0 4px 32px #0006;
+  padding: 32px 32px 24px 32px;
+  min-width: 70%;
+  max-width: 520px;
+}
+
+.settings-table-center {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 420px;
+  background: transparent;
+}
+.settings-th, .settings-td {
+  background: transparent !important;
+  border: none !important;
+  font-size: 1.1em;
+  color: var(--settings-fg, #fff);
+}
+.settings-user-cell, .settings-password-cell {
+  display: flex;
+  align-items: right;
+  justify-content: right;
+  padding-right: 120px;
+}
+.settings-password-input {
+  width: 120px;
+  text-align: center;
+  border-radius: 8px;
+  border: 1px solid #babdc4;
+  padding: 4px 8px;
+  font-size: 1em;
+  background: #23272f;
+  color: #fff;
+}
+.settings-btn {
+  margin-left: 4px;
+  border-radius: 6px;
+  border: none;
+  padding: 4px 10px;
+  font-size: 1em;
+  background: #3a4250;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.settings-btn-save {
+  background: #8ca6db;
+}
+.settings-btn-cancel {
+  background: #babdc4;
+  color: #333;
+}
+.settings-btn-edit {
+  background: #5b6770;
+}
+.settings-btn-close {
+  display: block;
+  background: #ff4d4f;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.1em;
+  border-radius: 8px;
+  padding: 8px 24px;
+}
+.settings-feedback {
+  font-size: 0.95em;
+  margin-top: 2px;
+}
+.settings-no-users {
+  text-align: center;
+  color: #888;
+  margin-top: 18px;
+}
+.settings-loading {
+  text-align: center;
+  color: #8ca6db;
+  margin-bottom: 18px;
+}
+.user-icon-img, .lock-icon-img {
+  vertical-align: middle;
+  width: 28px;
+  height: 28px;
+  margin-right: 8px;
+  padding-left: 75px;
+}
+.settings-th {
+  font-weight: bold;
+  color: #5b6770;
+  font-size: 1.2em;
+  text-align: left;
+  padding-left: 70px;
+  padding-right: 40px;
+}
+.settings-td {
+  padding: 8px 0;
+  text-align: right;
+  color: #fff;
+}
+.login-btn{
+  font-family: "Aptos", sans-serif;
+}
+.register-btn {
+  font-family: "Aptos", sans-serif;
+  background: linear-gradient(135deg, #8ca6db 60%, #5b6770 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.2s;
 }
 </style>

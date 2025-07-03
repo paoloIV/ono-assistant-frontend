@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "ono-assistant-fronted",
+			"path": ".."
+		},
+		{
+			"name": "ono-assistant",
+			"path": "../../ono-assistant"
+		}
+	],
+	"settings": {}
+}
