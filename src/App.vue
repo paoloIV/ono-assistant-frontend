@@ -193,55 +193,61 @@
           type="text"
           placeholder="Scrivi un messaggio..."
           autocomplete="off"
-          :disabled="isLoading"
-          color = "#fff6fc"
+          :disabled="isLoading || isRecording"
+          color="#fff6fc"
         />
-        <button
-          type="button"
-          class="voice-btn"
-          title="Messaggio vocale"
-          @click="startVoiceMessage"
-          :disabled="isLoading"
-        >
-          <img :src="micIcon" alt="Microfono" style="width: 40px; height: 40px" />
-        </button>
-        <button @click="stopRecognition" type="button" class="stop-btn" title="Ferma registrazione">
-          <img src="/stop.white.png" alt="Stop" style="width: 40px; height: 40px" />
-        </button>
-        <button v-if="lastUserAudioUrl" @click="playLastUserAudio" type="button" class="play-audio-btn" title="Ascolta l'ultimo audio registrato">
-          ▶️ Ascolta
-        </button>
-        
-
-        <span style="position: relative; display: inline-block; width: 60px; height: 60px;">
+        <!-- Icone allineate orizzontalmente e ben separate -->
+        <div class="footer-icons-row">
+          <!-- STOP/MIC multifunzione -->
           <button
-            v-if="!isLoading"
+            type="button"
+            class="voice-btn"
+            :title="isLoading || isRecording ? (isRecording ? 'Ferma registrazione' : 'Interrompi generazione') : 'Messaggio vocale'"
+            @mousedown="isLoading || isRecording ? (isRecording ? stopRecognition() : stopGeneration()) : startVoiceMessage()"
+            :disabled="isLoading && !isRecording"
+          >
+            <img
+              v-if="isLoading || isRecording"
+              :src="stopIcon"
+              alt="Stop"
+              style="width: 40px; height: 40px"
+            />
+            <img
+              v-else
+              :src="micIcon"
+              alt="Microfono"
+              style="width: 40px; height: 40px"
+            />
+          </button>
+          <!-- PLAY AUDIO -->
+          <button
+            v-if="lastUserAudioUrl && !isRecording && !isLoading"
+            @click="playLastUserAudio"
+            type="button"
+            class="play-audio-btn"
+            title="Ascolta l'ultimo audio registrato"
+            style="background: transparent !important; border: none !important; box-shadow: none !important; padding: 0; margin: 0; min-width: 0; min-height: 0;"
+          >
+            <img class="sound-btn" :src="resumeIcon" alt="Ascolta" style="width: 40px; height: 40px" />
+          </button>
+          <!-- INVIA -->
+          <button
+            v-if="!isLoading && !isRecording"
             type="submit"
             class="send-btn"
             title="Invia"
-            :disabled="isLoading"
-            style="position: absolute; right: -90px; top: 0px;"
+            :disabled="isLoading || isRecording"
           >
             <img :src="sendIcon" alt="Invia" style="width: 40px; height: 40px" />
           </button>
-          <button
-            v-if="isLoading"
-            type="button"
-            class="stop-btn"
-            @click="stopGeneration"
-            :title="'Interrompi generazione'"
-            style="position: absolute; left: 0; top: 0;"
-          >
-            <img :src="stopIcon" alt="Stop" style="width: 40px; height: 40px" />
-          </button>
-        </span>
+        </div>
       </form>
     </div>
 
 
   </div>
 
- 
+
   <input ref="fileInput" type="file" style="display: none" @change="handleFile" />
   <input
     ref="imageInput"
@@ -285,12 +291,15 @@ import stopImg from "/stop.png";
 import stopWhiteImg from "/stop.white.png";
 import deleteImg from "./assets/delete.png";
 import deleteWhiteImg from "./assets/delete.white.png";
+import resumeImg from "./assets/resume.png";
+import resumeWhiteImg from "./assets/resume.white.png";
 import { marked } from 'marked' // oppure markdown-it
 const showInfoModal = ref(false);
 // La funzione showInfo non serve più, ora si usa showInfoModal = true
 import editImg from "./assets/edit.svg";
 import editWhiteImg from "./assets/edit.white.svg";
 const editIcon = computed(() => isDark.value ? editImg : editWhiteImg);
+const resumeIcon = computed(() => isDark.value ? resumeImg : resumeWhiteImg);
 
 const form = reactive({
   username: "",
@@ -583,6 +592,7 @@ function selectChat(id) {
   chatId.value = Number(id);
   drawerOpen.value = false;
   loadChatMessages(chatId.value);
+  loadChatMessages(chatId.value);
 }
 
 const showNewChatModal = ref(false);
@@ -609,7 +619,6 @@ function confirmNewChat() {
     at: now,
     messages: []
   };
-  // UNIFICA HOST
   fetch("http://" + ip.value + ":8000/chat/create", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -957,6 +966,7 @@ function showInfo() {
 let mediaRecorder = null;
 const lastUserAudioUrl = ref(null);
 const audioChunks = [];
+const isRecording = ref(false); // <--- AGGIUNGI QUESTA VARIABILE
 
 function startVoiceMessage() {
   try {
@@ -976,12 +986,14 @@ function startVoiceMessage() {
         return;
       }
       audioChunks.length = 0;
+      isRecording.value = true; // <--- INIZIA REGISTRAZIONE
       mediaRecorder.ondataavailable = e => {
         if (e.data.size > 0) audioChunks.push(e.data);
       };
       mediaRecorder.onstop = () => {
         const blob = new Blob(audioChunks, { type: 'audio/webm' });
         lastUserAudioUrl.value = URL.createObjectURL(blob);
+        isRecording.value = false; // <--- FINE REGISTRAZIONE
       };
       mediaRecorder.start();
     }).catch((err) => {
@@ -995,6 +1007,7 @@ function startVoiceMessage() {
 function stopRecognition() {
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     mediaRecorder.stop();
+    isRecording.value = false; // <--- FINE REGISTRAZIONE
   }
 }
 
@@ -1020,7 +1033,7 @@ html, body, #app {
   padding: 0;
   overflow: hidden !important;
   box-sizing: border-box;
-  touch-action: none; /* Previene scroll con el dito */
+  touch-action: none;
 }
 
 .appFull {
@@ -1033,13 +1046,10 @@ html, body, #app {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* font-family spostato sotto */
   z-index: 1;
   background: transparent;
-  touch-action: none; /* Previene scroll táctil */
   align-items: center;
   justify-content: center;
-
 }
 
 /* Applica Aptos a tutto tranne header e login */
@@ -1064,9 +1074,12 @@ body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .d
   display: flex;
   flex: 1;
   flex-grow: 1;
+  flex: 1;
+  flex-grow: 1;
   flex-direction: column;
   box-shadow: 0 4px 24px rgba(44, 62, 80, 0.12);
   backdrop-filter: blur(4px);
+  border-radius: 0; /* rimosso ogni arrotondamento */
   border-radius: 0; /* rimosso ogni arrotondamento */
 }
 
@@ -1077,6 +1090,7 @@ body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .d
   height:100px;
   background: #5b6770;
   color: #fff;
+  font-size: 1.8em;
   font-size: 1.8em;
   font-family: "Nokia Expanded", sans-serif;
   font-weight: 700;
@@ -1094,6 +1108,7 @@ body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .d
 
 .darkmode-btn {
   position: absolute;
+  right: 80px; /* spostato più a sinistra */
   right: 80px; /* spostato più a sinistra */
   top: 30px;
   background: transparent;
@@ -1115,13 +1130,19 @@ body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .d
   overflow-y: auto;
   margin-bottom: 0;
   padding: 0 0 0 0;
+  margin-bottom: 0;
+  padding: 0 0 0 0;
   background: transparent;
+  border-radius: 0; /* rimosso ogni arrotondamento */
   border-radius: 0; /* rimosso ogni arrotondamento */
   display: flex;
   flex-direction: column;
   gap: 0;
+  gap: 0;
   scroll-behavior: smooth;
   width: 100%;
+  position: relative;
+  z-index: 1;
   position: relative;
   z-index: 1;
 }
@@ -1178,6 +1199,8 @@ body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .d
   border-radius: 0 0 0 0;
   padding: 0; /* padding-bottom a 0 */
   margin-bottom: 0px;
+  padding: 0; /* padding-bottom a 0 */
+  margin-bottom: 0px;
   display: flex;
   justify-content: center;
   z-index: 2;
@@ -1196,6 +1219,7 @@ body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .d
   box-shadow: 0 2px 12px rgba(44, 62, 80, 0.08);
   margin-bottom: 0;
   padding-bottom: 0; /* aggiunto per sicurezza */
+  padding-bottom: 0; /* aggiunto per sicurezza */
 }
 
 .chat-form input {
@@ -1207,10 +1231,12 @@ body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .d
   border: none;
   padding: 10px 18px; 
   font-size: 30px;
+  font-size: 30px;
   background: rgba(107, 107, 107, 0);
   margin-bottom: 0;
   outline: none;
   transition: box-shadow 0.2s, border 0.2s;
+  margin-left: 5%;
   margin-left: 5%;
   color: #f2f6fc;
   width: 100%;
@@ -1247,7 +1273,8 @@ body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .d
 .login-logo {
   position: static;
   width: 100px;
-  height: 75px;}
+  height: 75px;
+}
 
 /* Sfondo logo ONO */
 .logo-ono-bg {
@@ -1261,7 +1288,6 @@ body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .d
   opacity: 0.3;
   z-index: 0;
   pointer-events: none;
-  margin: 0;
 }
 
 .drawer-btn {
@@ -1341,6 +1367,7 @@ body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .d
   margin: 0;
   color: #fff;
   max-height: 100%;
+  max-height: 100%;
   overflow-y: auto;
   /* Aggiungi un po' di padding a destra per la scrollbar */
   padding-right: 8px;
@@ -1360,7 +1387,7 @@ body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .d
   color: #ffffff00;
   border: none;
   cursor: pointer;
-  margin-right: 100px !important; /* sposta più a sinistra */
+  margin-right: 10px; /* sposta anche il microfono più a sinistra */
   padding: 0 8px 0 10px;
   display: flex;
   align-items: center;
@@ -1406,7 +1433,10 @@ body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .d
   display: inline-block;
   width: 40px;
   height: 40px;
+  width: 40px;
+  height: 40px;
   border: 3px solid #8ca6db;
+  border-top: 5px solid #fff;
   border-top: 5px solid #fff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -1464,6 +1494,7 @@ body, .appFull, .chat, .chat-messages, .chat-footer, .chat-form, .user, .bot, .d
   margin-top: 60px;
   margin-bottom: 24px;
   letter-spacing: 2px;
+  font-family: "Nokia Expanded", sans-serif;
   font-family: "Nokia Expanded", sans-serif;
 }
 
@@ -1580,6 +1611,10 @@ body.darkmode .chat-form input {
   color: #000000 !important;
 }
 
+body.darkmode .chat-form input {
+  color: #000000 !important;
+}
+
 
 body,
 body.darkmode,
@@ -1675,6 +1710,21 @@ body.darkmode,
   margin-bottom: 8px;
   background: #f7f8fa;
   color: #333;
+  outline: none;
+  transition: border 0.2s;
+}
+.modal input[type="text"]:focus {
+  border: 1.5px solid #8ca6db;
+}
+.modal-actions {
+  display: flex;
+  gap: 18px;
+  width: 100%;
+  justify-content: center;
+  margin-top: 10px;
+}
+.modal-confirm {
+  background: linear-gradient(135deg, #8ca6db 60%, #5b6770 100%);
   outline: none;
   transition: border 0.2s;
 }
@@ -2046,7 +2096,7 @@ button:focus, .add-chat-btn:focus, .drawer-close:focus, .drawer-btn:focus, .dark
   background: #ff4d4f;
   color: #fff;
   font-weight: bold;
-  font-size: 1.1em;
+  font-size:  1.1em;
   border-radius: 8px;
   padding: 8px 24px;
 }
@@ -2093,9 +2143,32 @@ button:focus, .add-chat-btn:focus, .drawer-close:focus, .drawer-btn:focus, .dark
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 10px 20px;
   cursor: pointer;
   font-size: 1em;
   transition: background 0.2s;
+}
+.sound-btn{
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none;
+  cursor: pointer;
+  margin-right: 20px; /* sposta anche il microfono più a sinistra */
+  padding: 0 8px 0 10px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+  width: 60px;
+  height: 60px;
+}
+.footer-icons-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 38px; /* spazio orizzontale tra le icone */
+  margin-left: 10px;
+  margin-right: 10px;
+  min-width: 180px;
+  min-height: 60px;
 }
 </style>
